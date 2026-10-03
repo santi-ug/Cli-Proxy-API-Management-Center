@@ -539,6 +539,11 @@
   }
 }
 
+.quotaError {
+  color: var(--pool-low);
+  font-size: 12px;
+}
+
 .none .t,
 .none .r,
 .placeholder .r {

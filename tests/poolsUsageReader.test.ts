@@ -373,3 +373,42 @@ test('Pools retries an ambiguous committed Claude claim with its original reques
     cooldown.mockRestore();
   }
 });
+
+test('a failed refresh keeps last usage visible and marks expired reset times unknown', () => {
+  const now = Date.now();
+  const markup = renderToStaticMarkup(
+    createElement(AccountItem, {
+      account,
+      provider: providerFor('claude'),
+      columns: [{ id: 'five-hour', kind: 'five-hour', model: null }],
+      entry: {
+        usage: {
+          windows: [
+            {
+              id: 'five-hour',
+              kind: 'five-hour',
+              model: null,
+              leftPercent: 61,
+              resetAtMs: now - 1000,
+            },
+          ],
+          planCode: null,
+          bankedResets: 0,
+        },
+        fetchedAt: now - 600000,
+        attemptedAt: now,
+        loading: false,
+        error: '401',
+      },
+      now,
+      modeBusy: false,
+      onMode: () => {},
+      onReset: () => {},
+      onRefresh: () => {},
+    })
+  );
+  expect(markup).toContain(i18n.t('pools.stale_usage'));
+  expect(markup).toContain(i18n.t('pools.left', { percent: 61 }));
+  expect(markup).toContain(i18n.t('pools.reset_unknown'));
+  expect(markup).not.toContain(i18n.t('pools.no_reset_pending'));
+});

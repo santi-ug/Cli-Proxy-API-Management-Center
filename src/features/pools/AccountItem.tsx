@@ -24,10 +24,11 @@ const DOT_CLASS = { on: '', off: styles.dotOff, alert: styles.dotAlert } as cons
 interface MeterProps {
   label: string;
   window: UsageWindow;
+  stale: boolean;
   now: number;
 }
 
-function Meter({ label, window, now }: MeterProps) {
+function Meter({ label, window, now, stale }: MeterProps) {
   const { t, i18n } = useTranslation();
   const left = Math.round(window.leftPercent);
   return (
@@ -46,7 +47,7 @@ function Meter({ label, window, now }: MeterProps) {
             {formatResetClock(window.resetAtMs, now, i18n.resolvedLanguage)}
           </>
         ) : (
-          t('pools.no_reset_pending')
+          t(stale ? 'pools.reset_unknown' : 'pools.no_reset_pending')
         )}
       </div>
     </div>
@@ -97,7 +98,13 @@ export function AccountItem({
     ? columns.map((column) => {
         const window = usage.windows.find((candidate) => candidate.id === column.id);
         return window ? (
-          <Meter key={column.id} label={windowLabel(column)} window={window} now={now} />
+          <Meter
+            key={column.id}
+            label={windowLabel(column)}
+            window={window}
+            now={now}
+            stale={Boolean(entry?.error)}
+          />
         ) : (
           <div key={column.id} className={`${styles.m} ${styles.none}`}>
             <div className={styles.t}>{windowLabel(column)}</div>
@@ -117,6 +124,11 @@ export function AccountItem({
             {account.role ? <span className={styles.role}>{account.role}</span> : null}
           </div>
           {account.email ? <div className={styles.mask}>{maskEmail(account.email)}</div> : null}
+          {usage && entry?.error ? (
+            <div className={styles.quotaError} role="status">
+              {t('pools.stale_usage')}
+            </div>
+          ) : null}
           <div className={styles.state}>
             <span className={`${styles.dot} ${DOT_CLASS[status.tone]}`} aria-hidden="true" />
             {status.kind === 'mode' ? (

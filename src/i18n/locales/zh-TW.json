@@ -2282,6 +2282,8 @@
     "bank_hint_claude": "補滿百分比，計時不變",
     "bank_hint_codex": "每次會重新開始 7 天計時",
     "loading_quota": "正在讀取額度",
+    "stale_usage": "顯示上次資料；重新整理失敗",
+    "reset_unknown": "重設時間未知",
     "quota_unavailable": "額度無法使用",
     "no_usage_source": "此提供者暫無額度來源",
     "weekly_reset": "每週重置",

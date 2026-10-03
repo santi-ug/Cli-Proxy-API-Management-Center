@@ -2259,6 +2259,8 @@
     "bank_hint_claude": "refills the %, keeps the timer",
     "bank_hint_codex": "each restarts the 7-day timer",
     "loading_quota": "Reading quota",
+    "stale_usage": "Last reading; refresh failed",
+    "reset_unknown": "Reset time unknown",
     "quota_unavailable": "Quota unavailable",
     "no_usage_source": "No quota source for this provider yet",
     "weekly_reset": "Weekly reset",
