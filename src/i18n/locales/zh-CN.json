@@ -2270,7 +2270,7 @@
     "mode_on_rest": "直到你选择自动",
     "mode_off_strong": "不在池中",
     "mode_off_rest": "直到你选择自动或开启",
-    "mode_failed": "无法切换 {{name}}，已恢复为保存的设置。",
+    "mode_failed": "无法确认 {{name}} 的切换。请刷新查看。",
     "state": {
       "serving": "服务中",
       "ready": "就绪",

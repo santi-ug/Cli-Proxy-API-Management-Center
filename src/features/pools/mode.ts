@@ -4,28 +4,18 @@ import type { PoolAccount, PoolMode } from './model';
 
 const dependencies = {
   patchFields: authFilesApi.patchFields,
-  setStatus: authFilesApi.setStatus,
   revision: () => apiClient.getConnectionRevision(),
 };
 
-/** Compensate both writes on failure, including a timeout after the server applied one. */
+/** The backend applies mode, disabled state and manual priority in one mutation.
+ * A lost response may still mean success, so the caller re-reads instead of rolling back.
+ */
 export async function writePoolMode(account: PoolAccount, mode: PoolMode, deps = dependencies) {
   const revision = deps.revision();
-  const current = () => revision === deps.revision();
   try {
     await deps.patchFields(account.name, { pool_mode: mode });
-    if (!current()) return false;
-    if (mode !== 'auto') {
-      await deps.setStatus(account.name, mode === 'off', account.authIndex ?? undefined);
-    }
-    return current();
+    return revision === deps.revision();
   } catch {
-    if (!current()) return false;
-    // Try each restoration even if the other one fails. A re-read exposes remaining drift.
-    await Promise.allSettled([
-      deps.patchFields(account.name, { pool_mode: account.mode }),
-      deps.setStatus(account.name, account.disabled, account.authIndex ?? undefined),
-    ]);
     return false;
   }
 }

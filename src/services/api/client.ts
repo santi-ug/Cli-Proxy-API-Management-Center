@@ -21,6 +21,7 @@ class ApiClient {
   private apiBase: string = '';
   private managementKey: string = '';
   private connectionRevision = 0;
+  private requestRevisions = new WeakMap<object, number>();
 
   constructor() {
     this.instance = axios.create({
@@ -54,6 +55,10 @@ class ApiClient {
   /** Guards read/modify/write operations across connection changes, including ABA switches. */
   getConnectionRevision(): number {
     return this.connectionRevision;
+  }
+
+  private isCurrentRequest(config: object | undefined): boolean {
+    return config !== undefined && this.requestRevisions.get(config) === this.connectionRevision;
   }
 
   private readHeader(headers: Record<string, unknown> | undefined, keys: string[]): string | null {
@@ -114,6 +119,7 @@ class ApiClient {
     // 请求拦截器
     this.instance.interceptors.request.use(
       (config) => {
+        this.requestRevisions.set(config, this.connectionRevision);
         // 设置 baseURL
         config.baseURL = this.apiBase;
 
@@ -124,7 +130,11 @@ class ApiClient {
 
         return config;
       },
-      (error) => Promise.reject(this.handleError(error))
+      (error) => {
+        throw this.handleError(error);
+      },
+      // Bind the gateway and revision before another synchronous session change.
+      { synchronous: true }
     );
 
     // 响应拦截器
@@ -138,14 +148,14 @@ class ApiClient {
         const supportsPlugin = this.readBooleanHeader(headers, CPA_SUPPORT_PLUGIN_HEADER_KEYS);
 
         // 触发版本更新事件（后续通过 store 处理）
-        if (version || buildDate) {
+        if (this.isCurrentRequest(response.config) && (version || buildDate)) {
           window.dispatchEvent(
             new CustomEvent('server-version-update', {
               detail: { version: version || null, buildDate: buildDate || null },
             })
           );
         }
-        if (supportsPlugin !== null) {
+        if (this.isCurrentRequest(response.config) && supportsPlugin !== null) {
           window.dispatchEvent(
             new CustomEvent('server-plugin-support-update', {
               detail: { supportsPlugin },
@@ -175,7 +185,7 @@ class ApiClient {
       apiError.data = responseData;
 
       // 401 未授权 - 触发登出事件
-      if (error.response?.status === 401) {
+      if (error.response?.status === 401 && this.isCurrentRequest(error.config)) {
         window.dispatchEvent(new Event('unauthorized'));
       }
 

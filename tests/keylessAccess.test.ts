@@ -4,6 +4,9 @@ import { apiClient } from '@/services/api/client';
 import { probeKeylessAccess } from '@/services/api/keylessProbe';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useConfigStore } from '@/stores/useConfigStore';
+import { useModelsStore } from '@/stores/useModelsStore';
+import { useQuotaStore } from '@/stores/useQuotaStore';
+import type { Config } from '@/types';
 
 const spies: Array<{ mockRestore(): void }> = [];
 const originalFetchConfig = useConfigStore.getState().fetchConfig;
@@ -40,17 +43,27 @@ afterAll(() => {
 afterEach(() => {
   spies.splice(0).forEach((spy) => spy.mockRestore());
   useConfigStore.setState({ fetchConfig: originalFetchConfig });
-  apiClient.setConfig({ apiBase: '', managementKey: '' });
-  useAuthStore.setState({
-    isAuthenticated: false,
-    keyless: false,
-    apiBase: '',
-    managementKey: '',
-    connectionStatus: 'disconnected',
-  });
+  useAuthStore.getState().logout();
+  memory.clear();
 });
 
 const respond = (status: number, data: unknown) => ({ status, data });
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (error: Error) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
+
+const otherGateway = {
+  apiBase: 'https://other-gateway.invalid',
+  managementKey: 'other-fixture',
+  rememberPassword: true,
+};
 
 describe('probeKeylessAccess', () => {
   test('asks for the v8 config without an Authorization header', async () => {
@@ -123,5 +136,227 @@ describe('connectKeyless', () => {
       rememberPassword: false,
     });
     expect(useAuthStore.getState().keyless).toBe(false);
+  });
+
+  test('a probe completed after logout cannot restore the session or touch caches', async () => {
+    const probe = deferred<ReturnType<typeof respond>>();
+    spies.push(spyOn(axios, 'get').mockReturnValue(probe.promise));
+    useAuthStore.setState({ apiBase: 'https://logout-probe.invalid' });
+    const pending = useAuthStore.getState().connectKeyless();
+    useAuthStore.getState().logout();
+    const revision = apiClient.getConnectionRevision();
+    const fetchConfig = spyOn(useConfigStore.getState(), 'fetchConfig').mockResolvedValue({});
+    const clearConfig = spyOn(useConfigStore.getState(), 'clearCache');
+    const clearModels = spyOn(useModelsStore.getState(), 'clearCache');
+    const clearQuota = spyOn(useQuotaStore.getState(), 'clearQuotaCache');
+    spies.push(fetchConfig, clearConfig, clearModels, clearQuota);
+
+    probe.resolve(respond(200, {}));
+    expect(await pending).toBe(false);
+    expect(useAuthStore.getState()).toMatchObject({
+      isAuthenticated: false,
+      keyless: false,
+      apiBase: '',
+      connectionStatus: 'disconnected',
+    });
+    expect(apiClient.getConnectionRevision()).toBe(revision);
+    expect(fetchConfig).not.toHaveBeenCalled();
+    expect(clearConfig).not.toHaveBeenCalled();
+    expect(clearModels).not.toHaveBeenCalled();
+    expect(clearQuota).not.toHaveBeenCalled();
+  });
+
+  test('a probe completed after a keyed login cannot replace the newer gateway', async () => {
+    const probe = deferred<ReturnType<typeof respond>>();
+    spies.push(spyOn(axios, 'get').mockReturnValue(probe.promise));
+    const fetchConfig = spyOn(useConfigStore.getState(), 'fetchConfig').mockResolvedValue({});
+    spies.push(fetchConfig);
+    useAuthStore.setState({ apiBase: 'https://old-probe.invalid' });
+    const pending = useAuthStore.getState().connectKeyless();
+    await useAuthStore.getState().login(otherGateway);
+    const revision = apiClient.getConnectionRevision();
+
+    probe.resolve(respond(200, {}));
+    expect(await pending).toBe(false);
+    expect(useAuthStore.getState()).toMatchObject({
+      ...otherGateway,
+      isAuthenticated: true,
+      keyless: false,
+      connectionStatus: 'connected',
+    });
+    expect(apiClient.getConnectionRevision()).toBe(revision);
+    expect(fetchConfig).toHaveBeenCalledTimes(1);
+    expect(memory.get('isLoggedIn')).toBe('true');
+  });
+
+  test.each(['resolve', 'reject'] as const)(
+    'a stale keyless config %s cannot change the newer keyed session',
+    async (outcome) => {
+      const config = deferred<Config>();
+      const started = deferred<void>();
+      spies.push(spyOn(axios, 'get').mockResolvedValue(respond(200, {})));
+      const fetchConfig = spyOn(useConfigStore.getState(), 'fetchConfig')
+        .mockImplementationOnce(() => {
+          started.resolve();
+          return config.promise;
+        })
+        .mockResolvedValue({});
+      spies.push(fetchConfig);
+      useAuthStore.setState({ apiBase: `https://old-config-${outcome}.invalid` });
+      const pending = useAuthStore.getState().connectKeyless();
+      await started.promise;
+      await useAuthStore.getState().login(otherGateway);
+      const revision = apiClient.getConnectionRevision();
+
+      if (outcome === 'resolve') config.resolve({});
+      else config.reject(new Error('old gateway offline'));
+      expect(await pending).toBe(false);
+      expect(useAuthStore.getState()).toMatchObject({
+        ...otherGateway,
+        isAuthenticated: true,
+        keyless: false,
+        connectionStatus: 'connected',
+      });
+      expect(apiClient.getConnectionRevision()).toBe(revision);
+    }
+  );
+
+  test('an obsolete probe cannot clear a newer in-flight keyless attempt', async () => {
+    const oldProbe = deferred<ReturnType<typeof respond>>();
+    const newProbe = deferred<ReturnType<typeof respond>>();
+    const get = spyOn(axios, 'get')
+      .mockReturnValueOnce(oldProbe.promise)
+      .mockReturnValueOnce(newProbe.promise);
+    spies.push(get, spyOn(useConfigStore.getState(), 'fetchConfig').mockResolvedValue({}));
+    useAuthStore.setState({ apiBase: 'https://old-attempt.invalid' });
+    const oldAttempt = useAuthStore.getState().connectKeyless();
+    useAuthStore.getState().logout();
+    useAuthStore.setState({ apiBase: 'https://new-attempt.invalid' });
+    const newAttempt = useAuthStore.getState().connectKeyless();
+    oldProbe.resolve(respond(200, {}));
+    expect(await oldAttempt).toBe(false);
+    expect(useAuthStore.getState().connectKeyless()).toBe(newAttempt);
+    expect(get).toHaveBeenCalledTimes(2);
+    newProbe.resolve(respond(200, {}));
+    expect(await newAttempt).toBe(true);
+    expect(useAuthStore.getState().apiBase).toBe('https://new-attempt.invalid');
+  });
+});
+
+describe('asynchronous keyed authentication', () => {
+  test('logout invalidates a pending keyed login', async () => {
+    const config = deferred<Config>();
+    spies.push(spyOn(useConfigStore.getState(), 'fetchConfig').mockReturnValue(config.promise));
+    const login = useAuthStore.getState().login(otherGateway);
+    useAuthStore.getState().logout();
+    config.resolve({});
+    await expect(login).rejects.toThrow('superseded');
+    expect(useAuthStore.getState()).toMatchObject({
+      isAuthenticated: false,
+      connectionStatus: 'disconnected',
+      apiBase: '',
+    });
+    expect(memory.has('isLoggedIn')).toBe(false);
+  });
+
+  test.each(['resolve', 'reject'] as const)(
+    'a stale keyed login %s cannot change a newer login',
+    async (outcome) => {
+      const config = deferred<Config>();
+      spies.push(
+        spyOn(useConfigStore.getState(), 'fetchConfig')
+          .mockReturnValueOnce(config.promise)
+          .mockResolvedValue({})
+      );
+      const oldLogin = useAuthStore.getState().login({
+        apiBase: 'https://old-keyed.invalid',
+        managementKey: 'old-fixture',
+        rememberPassword: false,
+      });
+      await useAuthStore.getState().login(otherGateway);
+      if (outcome === 'resolve') config.resolve({});
+      else config.reject(new Error('old gateway rejected login'));
+      await expect(oldLogin).rejects.toThrow();
+      expect(useAuthStore.getState()).toMatchObject({
+        ...otherGateway,
+        isAuthenticated: true,
+        connectionStatus: 'connected',
+      });
+      expect(memory.get('isLoggedIn')).toBe('true');
+    }
+  );
+
+  test.each(['resolve', 'reject'] as const)(
+    'a pending stored-key check %s cannot change a newer login',
+    async (outcome) => {
+      const config = deferred<Config>();
+      spies.push(
+        spyOn(useConfigStore.getState(), 'fetchConfig')
+          .mockReturnValueOnce(config.promise)
+          .mockResolvedValue({})
+      );
+      useAuthStore.setState({
+        apiBase: 'https://old-check.invalid',
+        managementKey: 'old-fixture',
+      });
+      const check = useAuthStore.getState().checkAuth();
+      await useAuthStore.getState().login(otherGateway);
+      if (outcome === 'resolve') config.resolve({});
+      else config.reject(new Error('old gateway rejected check'));
+      expect(await check).toBe(false);
+      expect(useAuthStore.getState()).toMatchObject({
+        ...otherGateway,
+        isAuthenticated: true,
+        connectionStatus: 'connected',
+      });
+    }
+  );
+
+  test('logout invalidates a pending automatic session restoration', async () => {
+    const config = deferred<Config>();
+    spies.push(
+      spyOn(useConfigStore.getState(), 'fetchConfig').mockReturnValue(config.promise),
+      spyOn(console, 'warn').mockImplementation(() => {})
+    );
+    useAuthStore.setState(otherGateway);
+    memory.set('isLoggedIn', 'true');
+    const restore = useAuthStore.getState().restoreSession();
+    useAuthStore.getState().logout();
+    config.resolve({});
+    expect(await restore).toBe(false);
+    expect(useAuthStore.getState()).toMatchObject({
+      isAuthenticated: false,
+      connectionStatus: 'disconnected',
+      apiBase: '',
+    });
+    expect(memory.has('isLoggedIn')).toBe(false);
+  });
+
+  test('an old restoration cannot clear the promise for a newer restoration', async () => {
+    const oldConfig = deferred<Config>();
+    const newConfig = deferred<Config>();
+    const fetchConfig = spyOn(useConfigStore.getState(), 'fetchConfig')
+      .mockReturnValueOnce(oldConfig.promise)
+      .mockReturnValueOnce(newConfig.promise);
+    spies.push(fetchConfig);
+    useAuthStore.setState(otherGateway);
+    memory.set('isLoggedIn', 'true');
+    const oldRestore = useAuthStore.getState().restoreSession();
+    useAuthStore.getState().logout();
+    useAuthStore.setState(otherGateway);
+    memory.set('isLoggedIn', 'true');
+    const newRestore = useAuthStore.getState().restoreSession();
+
+    oldConfig.resolve({});
+    expect(await oldRestore).toBe(false);
+    expect(useAuthStore.getState().restoreSession()).toBe(newRestore);
+    expect(fetchConfig).toHaveBeenCalledTimes(2);
+    newConfig.resolve({});
+    expect(await newRestore).toBe(true);
+    expect(useAuthStore.getState()).toMatchObject({
+      ...otherGateway,
+      isAuthenticated: true,
+      connectionStatus: 'connected',
+    });
   });
 });

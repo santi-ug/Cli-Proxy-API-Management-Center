@@ -2273,7 +2273,7 @@
     "mode_on_rest": "until you pick Auto",
     "mode_off_strong": "Out of the pool",
     "mode_off_rest": "until you pick Auto or On",
-    "mode_failed": "Could not switch {{name}}. It is back to its saved setting.",
+    "mode_failed": "Could not confirm the switch for {{name}}. Refresh to check.",
     "state": {
       "serving": "Serving",
       "ready": "Ready",

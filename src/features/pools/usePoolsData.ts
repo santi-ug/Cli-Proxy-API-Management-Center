@@ -163,8 +163,8 @@ export function usePoolsData() {
   }, [accounts, fetchAccount, loadFiles]);
 
   /**
-   * Optimistic switch: the row changes at once and falls back to the server's
-   * state if either PATCH fails. On/Off also flip `disabled` so routing obeys now.
+   * Optimistic switch: the row changes at once while the backend atomically applies
+   * intent and routing state. Re-read after the request, including ambiguous failures.
    */
   const setMode = useCallback(
     async (account: PoolAccount, mode: PoolMode): Promise<boolean> => {

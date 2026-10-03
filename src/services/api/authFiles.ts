@@ -48,7 +48,7 @@ export type AuthFileFieldsPatch = {
   excluded_models?: string[];
   'excluded-models'?: string[];
   expired?: string;
-  /** Account pools switch: auto follows the routing rules, on/off pin it. */
+  /** Atomically switches intent and manual routing state; auto lets the router recompute. */
   pool_mode?: 'auto' | 'on' | 'off';
 };
 type AuthFileBatchFailure = { name: string; error: string };

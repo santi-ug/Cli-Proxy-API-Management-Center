@@ -2296,7 +2296,7 @@
     "mode_on_rest": "直到你選擇自動",
     "mode_off_strong": "不在池中",
     "mode_off_rest": "直到你選擇自動或開啟",
-    "mode_failed": "無法切換 {{name}}，已恢復為儲存的設定。",
+    "mode_failed": "無法確認 {{name}} 的切換。請重新整理查看。",
     "state": {
       "serving": "服務中",
       "ready": "就緒",

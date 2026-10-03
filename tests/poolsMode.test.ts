@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { writePoolMode } from '@/features/pools/mode';
-import { toPoolAccount } from '@/features/pools/model';
+import { POOL_MODES, toPoolAccount, type PoolMode } from '@/features/pools/model';
 
 const account = toPoolAccount({
   name: 'fixture.json',
@@ -9,57 +9,76 @@ const account = toPoolAccount({
   disabled: false,
 })!;
 
-describe('pool mode compensation', () => {
-  test('restores mode and disabled after the status write fails', async () => {
-    const patches: unknown[] = [];
-    const statuses: boolean[] = [];
+describe('atomic pool mode writes', () => {
+  for (const mode of POOL_MODES) {
+    test(`${mode} sends one mutation and lets the backend derive routing state`, async () => {
+      const patches: unknown[] = [];
+      expect(
+        await writePoolMode(account, mode, {
+          revision: () => 1,
+          patchFields: async (name, fields) => {
+            patches.push({ name, ...fields });
+            return {};
+          },
+        })
+      ).toBe(true);
+      expect(patches).toEqual([{ name: account.name, pool_mode: mode }]);
+    });
+  }
+
+  test('an applied mutation with a lost response is not rolled back', async () => {
+    let remoteMode: PoolMode = 'auto';
+    let writes = 0;
     const changed = await writePoolMode(account, 'off', {
       revision: () => 1,
-      patchFields: async (_name, fields) => {
-        patches.push(fields);
-        return {};
-      },
-      setStatus: async (_name, disabled) => {
-        statuses.push(disabled);
-        if (statuses.length === 1) throw new Error('lost status response');
-        return { status: 'ok', disabled };
+      patchFields: async () => {
+        writes++;
+        remoteMode = 'off';
+        throw new Error('lost response after apply');
       },
     });
     expect(changed).toBe(false);
-    expect(patches).toEqual([{ pool_mode: 'off' }, { pool_mode: 'auto' }]);
-    expect(statuses).toEqual([true, false]);
+    expect(writes).toBe(1);
+    expect(remoteMode).toBe('off');
   });
-  test('still restores disabled when mode restoration fails', async () => {
-    const statuses: boolean[] = [];
-    let patches = 0;
-    await writePoolMode(account, 'off', {
+
+  test('a delayed failure preserves a newer choice from another device', async () => {
+    const response = Promise.withResolvers<Record<string, unknown>>();
+    let remoteMode: PoolMode;
+    let writes = 0;
+    const pending = writePoolMode(account, 'off', {
       revision: () => 1,
-      patchFields: async () => {
-        patches++;
-        throw new Error('timeout');
-      },
-      setStatus: async (_name, disabled) => {
-        statuses.push(disabled);
-        return { status: 'ok', disabled };
+      patchFields: () => {
+        writes++;
+        remoteMode = 'off';
+        return response.promise;
       },
     });
-    expect(patches).toBe(2);
-    expect(statuses).toEqual([false]);
+    // Another device successfully changed the same account while our response was pending.
+    remoteMode = 'on';
+    response.reject(new Error('lost response'));
+    expect(await pending).toBe(false);
+    expect(writes).toBe(1);
+    expect(remoteMode).toBe('on');
   });
-  test('never restores old account values against a replacement connection', async () => {
-    let revision = 1;
-    let statuses = 0;
-    await writePoolMode(account, 'off', {
-      revision: () => revision,
-      patchFields: async () => {
-        revision++;
-        throw new Error('disconnected');
-      },
-      setStatus: async () => {
-        statuses++;
-        return { status: 'ok' };
-      },
+
+  for (const failed of [false, true]) {
+    test(`a stale ${failed ? 'failure' : 'success'} cannot act on a replacement connection`, async () => {
+      const response = Promise.withResolvers<Record<string, unknown>>();
+      let revision = 1;
+      let writes = 0;
+      const pending = writePoolMode(account, 'off', {
+        revision: () => revision,
+        patchFields: () => {
+          writes++;
+          return response.promise;
+        },
+      });
+      revision++;
+      if (failed) response.reject(new Error('old connection'));
+      else response.resolve({});
+      expect(await pending).toBe(false);
+      expect(writes).toBe(1);
     });
-    expect(statuses).toBe(0);
-  });
+  }
 });
