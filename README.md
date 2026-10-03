@@ -44,6 +44,8 @@ The UI is bundled with [CLI Proxy API](https://github.com/router-for-me/CLIProxy
 
 The API address is detected from the page URL and can be changed manually.
 
+If the gateway accepts management calls without a key from where you connect (for example loopback behind Tailscale Serve), the UI connects on its own and skips the login screen. Otherwise the key login applies.
+
 > [!NOTE]
 > The **management key** signs you into this UI. Client keys in `access.api-keys` authorize requests to the proxy — they are not interchangeable.
 
@@ -70,6 +72,7 @@ Upgrade the backend first and back up `config.yaml`. The backend returns the v8 
 
 | Area | What you can do |
 | --- | --- |
+| **Account pools** | The page you land on: every Claude and Codex account's 5-hour and weekly limits, banked resets, and Auto/On/Off pool switches. **Compact** keeps only the bars, for screenshots. |
 | **Dashboard** | See connection status, server version, build date, and model availability at a glance. |
 | **Configuration** | Edit common settings and client keys visually, or use the YAML editor with search, highlighting, and a save diff preview. |
 | **AI providers** | Configure Gemini, Codex, Claude, Vertex, and OpenAI-compatible providers; manage keys, headers, proxies, and model mappings. |

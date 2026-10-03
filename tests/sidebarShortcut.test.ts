@@ -1,8 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import {
-  getSidebarShortcutLabel,
-  isSidebarToggleShortcut,
-} from '@/utils/sidebarShortcut';
+import { isSidebarToggleShortcut } from '@/utils/sidebarShortcut';
 
 describe('Sidebar Shortcut Logic', () => {
   describe('isSidebarToggleShortcut', () => {
@@ -126,13 +123,6 @@ describe('Sidebar Shortcut Logic', () => {
           target: buttonEl,
         })
       ).toBe(true);
-    });
-  });
-
-  describe('getSidebarShortcutLabel', () => {
-    test('returns ⌘B for Mac and Ctrl+B for non-Mac', () => {
-      expect(getSidebarShortcutLabel(true)).toBe('⌘B');
-      expect(getSidebarShortcutLabel(false)).toBe('Ctrl+B');
     });
   });
 });

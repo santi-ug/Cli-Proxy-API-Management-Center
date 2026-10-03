@@ -5,11 +5,8 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
-  useMemo,
   useRef,
   useState,
-  type MouseEvent as ReactMouseEvent,
-  type SyntheticEvent,
 } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -21,6 +18,7 @@ import {
   IconSidebarAuthFiles,
   IconSidebarConfig,
   IconSidebarDashboard,
+  IconSidebarPools,
   IconSidebarLogs,
   IconSidebarOauth,
   IconSidebarPlugins,
@@ -35,6 +33,7 @@ import { INLINE_LOGO_JPEG } from '@/assets/logoInline';
 import {
   useAuthStore,
   useConfigStore,
+  useDrawerStore,
   useLanguageStore,
   useNotificationStore,
   useThemeStore,
@@ -50,10 +49,11 @@ import { APIKEY_FUN_DISPLAY_NAME, hasApiKeyFunConfig } from '@/features/provider
 import { triggerHeaderRefresh } from '@/hooks/useHeaderRefresh';
 import { LANGUAGE_LABEL_KEYS, LANGUAGE_ORDER } from '@/utils/constants';
 import { isSupportedLanguage } from '@/utils/language';
-import { getSidebarShortcutLabel, isSidebarToggleShortcut } from '@/utils/sidebarShortcut';
+import { isSidebarToggleShortcut } from '@/utils/sidebarShortcut';
 import type { Theme } from '@/types';
 
 const sidebarIcons: Record<string, ReactNode> = {
+  pools: <IconSidebarPools size={18} />,
   dashboard: <IconSidebarDashboard size={18} />,
   quickStart: <IconSidebarQuickStart size={18} />,
   aiProviders: <IconSidebarProviders size={18} />,
@@ -71,9 +71,7 @@ interface SidebarNavLinkItem {
   kind?: 'link';
   path: string;
   labelKey?: string;
-  metaKey?: string;
   label?: string;
-  meta?: string;
   badge?: number;
   badgeLabel?: string;
   icon: ReactNode;
@@ -83,15 +81,13 @@ interface SidebarNavDrawerItem {
   kind: 'drawer';
   id: string;
   label: string;
-  meta?: string;
   icon: ReactNode;
   children: SidebarNavLinkItem[];
 }
 
 type SidebarNavItem = SidebarNavLinkItem | SidebarNavDrawerItem;
 
-const NAV_TOOLTIP_ID = 'sidebar-nav-tooltip';
-const NAV_TOOLTIP_VIEWPORT_MARGIN = 8;
+const DRAWER_ID = 'app-drawer';
 
 interface SidebarNavGroup {
   id: string;
@@ -169,25 +165,14 @@ const headerIcons = {
   ),
   menu: (
     <svg {...headerIconProps}>
-      <path d="M4 7h16" />
-      <path d="M4 12h16" />
-      <path d="M4 17h16" />
+      <rect x="3" y="4.5" width="18" height="15" rx="3" />
+      <path d="M9 4.5v15" />
     </svg>
   ),
   close: (
     <svg {...headerIconProps}>
       <path d="M18 6 6 18" />
       <path d="m6 6 12 12" />
-    </svg>
-  ),
-  chevronLeft: (
-    <svg {...headerIconProps}>
-      <path d="m14 18-6-6 6-6" />
-    </svg>
-  ),
-  chevronRight: (
-    <svg {...headerIconProps}>
-      <path d="m10 6 6 6-6 6" />
     </svg>
   ),
   language: (
@@ -312,6 +297,7 @@ export function MainLayout() {
   const location = useLocation();
 
   const logout = useAuthStore((state) => state.logout);
+  const keyless = useAuthStore((state) => state.keyless);
   const connectionStatus = useAuthStore((state) => state.connectionStatus);
   const apiBase = useAuthStore((state) => state.apiBase);
   const supportsPlugin = useAuthStore((state) => state.supportsPlugin);
@@ -325,16 +311,12 @@ export function MainLayout() {
   const language = useLanguageStore((state) => state.language);
   const setLanguage = useLanguageStore((state) => state.setLanguage);
 
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const drawerOpen = useDrawerStore((state) => state.open);
+  const drawerOpener = useDrawerStore((state) => state.opener);
+  const openDrawer = useDrawerStore((state) => state.openDrawer);
+  const closeDrawer = useDrawerStore((state) => state.closeDrawer);
+
   const [authFilesCount, setAuthFilesCount] = useState<number | null>(null);
-  const [railTooltip, setRailTooltip] = useState<{
-    targetID: string;
-    label: string;
-    meta?: string;
-    anchorTop: number;
-    top: number;
-  } | null>(null);
   const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
   const [pluginResources, setPluginResources] = useState<PluginResourceEntry[]>([]);
@@ -343,17 +325,18 @@ export function MainLayout() {
   );
   const contentRef = useRef<HTMLDivElement | null>(null);
   const authFilesCountRequestRef = useRef(0);
-  const railTooltipRef = useRef<HTMLDivElement | null>(null);
-  const focusedRailItemRef = useRef<HTMLElement | null>(null);
   const languageMenuRef = useRef<HTMLDivElement | null>(null);
   const themeMenuRef = useRef<HTMLDivElement | null>(null);
   const headerRef = useRef<HTMLElement | null>(null);
+  const drawerRef = useRef<HTMLElement | null>(null);
+  const wasDrawerOpenRef = useRef(false);
 
   const fullBrandName = 'CLI Proxy API Management Center';
   const abbrBrandName = t('title.abbr');
   const isLogsPage = location.pathname.startsWith('/logs');
   const isPluginResourcePage = location.pathname.startsWith('/plugin-pages');
-  const showSidebarLabels = !sidebarCollapsed || sidebarOpen;
+  // The pools page brings its own header with the drawer button and refresh.
+  const isPoolsPage = location.pathname === '/';
 
   // Keep floating header height available to sticky mobile elements and overlays.
   useLayoutEffect(() => {
@@ -383,34 +366,6 @@ export function MainLayout() {
       window.removeEventListener('resize', updateHeaderHeight);
     };
   }, []);
-
-  useLayoutEffect(() => {
-    if (!railTooltip) return;
-
-    const updateRailTooltipPosition = () => {
-      const tooltip = railTooltipRef.current;
-      if (!tooltip) return;
-
-      const halfHeight = tooltip.offsetHeight / 2;
-      const minTop = NAV_TOOLTIP_VIEWPORT_MARGIN + halfHeight;
-      const maxTop = Math.max(
-        minTop,
-        window.innerHeight - NAV_TOOLTIP_VIEWPORT_MARGIN - halfHeight
-      );
-      const top = Math.min(maxTop, Math.max(minTop, railTooltip.anchorTop));
-
-      setRailTooltip((current) => {
-        if (!current || current.targetID !== railTooltip.targetID || current.top === top) {
-          return current;
-        }
-        return { ...current, top };
-      });
-    };
-
-    updateRailTooltipPosition();
-    window.addEventListener('resize', updateRailTooltipPosition);
-    return () => window.removeEventListener('resize', updateRailTooltipPosition);
-  }, [railTooltip]);
 
   // Keep the content center available to bottom overlays that align with the main area.
   useLayoutEffect(() => {
@@ -443,6 +398,46 @@ export function MainLayout() {
       document.documentElement.style.removeProperty('--content-center-x');
     };
   }, []);
+
+  // Drawer focus: into the first link on open, back to whoever opened it on close.
+  useEffect(() => {
+    if (drawerOpen) {
+      wasDrawerOpenRef.current = true;
+      drawerRef.current?.querySelector<HTMLElement>('.nav-item')?.focus();
+      return;
+    }
+    if (!wasDrawerOpenRef.current) return;
+    wasDrawerOpenRef.current = false;
+    if (drawerOpener?.isConnected) drawerOpener.focus();
+  }, [drawerOpen, drawerOpener]);
+
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeDrawer();
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [drawerOpen, closeDrawer]);
+
+  // Cmd/Ctrl+B toggles the drawer from anywhere, as it toggled the sidebar before.
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!isSidebarToggleShortcut(event)) return;
+      event.preventDefault();
+      const { open, openDrawer: show, closeDrawer: hide } = useDrawerStore.getState();
+      if (open) hide();
+      else show(document.activeElement instanceof HTMLElement ? document.activeElement : null);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // A route change (any nav entry point) never leaves the drawer covering the new page.
+  useEffect(() => {
+    closeDrawer();
+  }, [location.pathname, closeDrawer]);
 
   const closeLanguageMenu = useCallback(() => setLanguageMenuOpen(false), []);
   const closeThemeMenu = useCallback(() => setThemeMenuOpen(false), []);
@@ -558,7 +553,6 @@ export function MainLayout() {
             {
               path: resource.route,
               label: resource.label,
-              meta: resource.description,
               icon: <PluginSidebarIcon src={pluginLogo} />,
             },
           ];
@@ -570,12 +564,10 @@ export function MainLayout() {
             kind: 'drawer',
             id: `plugin-pages-${group.pluginID}`,
             label: group.pluginTitle,
-            meta: t('plugin_resource.page_count', { count: group.entries.length }),
             icon: <PluginSidebarIcon src={pluginLogo} />,
             children: group.entries.map((resource) => ({
               path: resource.route,
               label: resource.label,
-              meta: resource.description,
               icon: <span className="nav-sub-dot" aria-hidden="true" />,
             })),
           },
@@ -588,7 +580,6 @@ export function MainLayout() {
     path: '/quick-start',
     label: isApiKeyFunConfigured ? APIKEY_FUN_DISPLAY_NAME : undefined,
     labelKey: isApiKeyFunConfigured ? undefined : 'nav.quick_start',
-    metaKey: 'nav_meta.quick_start',
     icon: sidebarIcons.quickStart,
   };
 
@@ -599,8 +590,12 @@ export function MainLayout() {
       items: [
         {
           path: '/',
+          labelKey: 'nav.account_pools',
+          icon: sidebarIcons.pools,
+        },
+        {
+          path: '/dashboard',
           labelKey: 'nav.dashboard',
-          metaKey: 'nav_meta.dashboard',
           icon: sidebarIcons.dashboard,
         },
         ...(!isApiKeyFunConfigured ? [quickStartNavItem] : []),
@@ -613,13 +608,11 @@ export function MainLayout() {
         {
           path: '/ai-providers',
           labelKey: 'nav.ai_providers',
-          metaKey: 'nav_meta.ai_providers',
           icon: sidebarIcons.aiProviders,
         },
         {
           path: '/auth-files',
           labelKey: 'nav.auth_files',
-          metaKey: 'nav_meta.auth_files',
           badge: authFilesCount ?? undefined,
           badgeLabel:
             typeof authFilesCount === 'number'
@@ -630,7 +623,6 @@ export function MainLayout() {
         {
           path: '/oauth',
           labelKey: 'nav.oauth',
-          metaKey: 'nav_meta.oauth',
           icon: sidebarIcons.oauth,
         },
         ...(isApiKeyFunConfigured ? [quickStartNavItem] : []),
@@ -643,13 +635,11 @@ export function MainLayout() {
         {
           path: '/quota',
           labelKey: 'nav.quota_management',
-          metaKey: 'nav_meta.quota_management',
           icon: sidebarIcons.quota,
         },
         {
           path: '/logs',
           labelKey: 'nav.logs',
-          metaKey: 'nav_meta.logs',
           icon: sidebarIcons.logs,
         },
       ],
@@ -661,7 +651,6 @@ export function MainLayout() {
         {
           path: '/config',
           labelKey: 'nav.config_management',
-          metaKey: 'nav_meta.config_management',
           icon: sidebarIcons.config,
         },
         ...(supportsPlugin
@@ -669,13 +658,11 @@ export function MainLayout() {
               {
                 path: '/plugins',
                 labelKey: 'nav.plugins',
-                metaKey: 'nav_meta.plugins',
                 icon: sidebarIcons.plugins,
               },
               {
                 path: '/plugin-store',
                 labelKey: 'nav.plugin_store',
-                metaKey: 'nav_meta.plugin_store',
                 icon: sidebarIcons.pluginStore,
               },
             ]
@@ -683,7 +670,6 @@ export function MainLayout() {
         {
           path: '/system',
           labelKey: 'nav.system_info',
-          metaKey: 'nav_meta.system_info',
           icon: sidebarIcons.system,
         },
       ],
@@ -701,9 +687,8 @@ export function MainLayout() {
   const navItems = navGroups.flatMap((group) => flattenNavItems(group.items));
   const navOrder = navItems.map((item) => item.path);
   const getRouteOrder = (pathname: string) => {
-    const trimmedPath =
+    const normalizedPath =
       pathname.length > 1 && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
-    const normalizedPath = trimmedPath === '/dashboard' ? '/' : trimmedPath;
 
     const authFilesIndex = navOrder.indexOf('/auth-files');
     if (authFilesIndex !== -1) {
@@ -724,11 +709,8 @@ export function MainLayout() {
   };
 
   const getTransitionVariant = useCallback((fromPathname: string, toPathname: string) => {
-    const normalize = (pathname: string) => {
-      const trimmed =
-        pathname.length > 1 && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
-      return trimmed === '/dashboard' ? '/' : trimmed;
-    };
+    const normalize = (pathname: string) =>
+      pathname.length > 1 && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
 
     const from = normalize(fromPathname);
     const to = normalize(toPathname);
@@ -772,72 +754,6 @@ export function MainLayout() {
     });
   }, []);
 
-  const showRailTooltip = useCallback(
-    (event: SyntheticEvent<HTMLElement>, targetID: string, label: string, meta?: string) => {
-      const rect = event.currentTarget.getBoundingClientRect();
-      const anchorTop = rect.top + rect.height / 2;
-      setRailTooltip({ targetID, label, meta, anchorTop, top: anchorTop });
-    },
-    []
-  );
-  const hideRailTooltip = useCallback(() => setRailTooltip(null), []);
-  const handleRailTooltipMouseEnter = useCallback(
-    (event: ReactMouseEvent<HTMLElement>, targetID: string, label: string, meta?: string) => {
-      const focusedItem = focusedRailItemRef.current;
-      if (focusedItem && focusedItem !== event.currentTarget) return;
-      showRailTooltip(event, targetID, label, meta);
-    },
-    [showRailTooltip]
-  );
-  const handleRailTooltipMouseLeave = useCallback(() => {
-    if (!focusedRailItemRef.current) hideRailTooltip();
-  }, [hideRailTooltip]);
-  const handleRailTooltipFocus = useCallback(
-    (event: SyntheticEvent<HTMLElement>, targetID: string, label: string, meta?: string) => {
-      focusedRailItemRef.current = event.currentTarget;
-      showRailTooltip(event, targetID, label, meta);
-    },
-    [showRailTooltip]
-  );
-  const handleRailTooltipBlur = useCallback(
-    (event: SyntheticEvent<HTMLElement>, targetID: string, label: string, meta?: string) => {
-      if (focusedRailItemRef.current === event.currentTarget) {
-        focusedRailItemRef.current = null;
-      }
-      if (event.currentTarget.matches(':hover')) {
-        showRailTooltip(event, targetID, label, meta);
-      } else {
-        hideRailTooltip();
-      }
-    },
-    [hideRailTooltip, showRailTooltip]
-  );
-
-  const isMac = useMemo(() => {
-    if (typeof navigator === 'undefined') return false;
-    const platform =
-      (navigator as unknown as { userAgentData?: { platform?: string } }).userAgentData?.platform ||
-      navigator.platform ||
-      navigator.userAgent ||
-      '';
-    return /(Mac|iPhone|iPod|iPad)/i.test(platform);
-  }, []);
-
-  const shortcutText = getSidebarShortcutLabel(isMac);
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (isSidebarToggleShortcut(event)) {
-        event.preventDefault();
-        hideRailTooltip();
-        setSidebarCollapsed((prev) => !prev);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [hideRailTooltip]);
-
   const renderNavBadge = (badge?: number, badgeLabel?: string) =>
     typeof badge === 'number' ? (
       <>
@@ -852,53 +768,20 @@ export function MainLayout() {
 
   const renderNavLink = (item: SidebarNavLinkItem, className = 'nav-item') => {
     const itemLabel = item.label ?? (item.labelKey ? t(item.labelKey) : '');
-    const itemMeta = item.meta ?? (item.metaKey ? t(item.metaKey) : '');
-    const accessibleLabel = item.badgeLabel ? `${itemLabel}, ${item.badgeLabel}` : itemLabel;
 
     return (
       <NavLink
         key={item.path}
         to={item.path}
+        end={item.path === '/'}
         className={({ isActive }) => `${className} ${isActive ? 'active' : ''}`}
-        onClick={() => {
-          focusedRailItemRef.current = null;
-          setSidebarOpen(false);
-          hideRailTooltip();
-        }}
-        aria-label={showSidebarLabels ? undefined : accessibleLabel}
-        aria-describedby={
-          !showSidebarLabels && itemMeta && railTooltip?.targetID === item.path
-            ? NAV_TOOLTIP_ID
-            : undefined
-        }
-        onMouseEnter={
-          showSidebarLabels
-            ? undefined
-            : (event) => handleRailTooltipMouseEnter(event, item.path, itemLabel, itemMeta)
-        }
-        onMouseLeave={showSidebarLabels ? undefined : handleRailTooltipMouseLeave}
-        onFocus={
-          showSidebarLabels
-            ? undefined
-            : (event) => handleRailTooltipFocus(event, item.path, itemLabel, itemMeta)
-        }
-        onBlur={
-          showSidebarLabels
-            ? undefined
-            : (event) => handleRailTooltipBlur(event, item.path, itemLabel, itemMeta)
-        }
+        onClick={closeDrawer}
       >
         <span className="nav-icon">{item.icon}</span>
-        {showSidebarLabels ? (
-          <>
-            <span className="nav-text">
-              <span className="nav-label">{itemLabel}</span>
-            </span>
-            {renderNavBadge(item.badge, item.badgeLabel)}
-          </>
-        ) : (
-          renderNavBadge(item.badge)
-        )}
+        <span className="nav-text">
+          <span className="nav-label">{itemLabel}</span>
+        </span>
+        {renderNavBadge(item.badge, item.badgeLabel)}
       </NavLink>
     );
   };
@@ -919,41 +802,15 @@ export function MainLayout() {
             isOpen ? 'open' : ''
           }`}
           onClick={() => togglePluginResourceDrawer(item.id)}
-          aria-label={showSidebarLabels ? undefined : item.label}
-          aria-describedby={
-            !showSidebarLabels && item.meta && railTooltip?.targetID === item.id
-              ? NAV_TOOLTIP_ID
-              : undefined
-          }
           aria-expanded={isOpen}
-          onMouseEnter={
-            showSidebarLabels
-              ? undefined
-              : (event) => handleRailTooltipMouseEnter(event, item.id, item.label, item.meta)
-          }
-          onMouseLeave={showSidebarLabels ? undefined : handleRailTooltipMouseLeave}
-          onFocus={
-            showSidebarLabels
-              ? undefined
-              : (event) => handleRailTooltipFocus(event, item.id, item.label, item.meta)
-          }
-          onBlur={
-            showSidebarLabels
-              ? undefined
-              : (event) => handleRailTooltipBlur(event, item.id, item.label, item.meta)
-          }
         >
           <span className="nav-icon">{item.icon}</span>
-          {showSidebarLabels && (
-            <>
-              <span className="nav-text">
-                <span className="nav-label">{item.label}</span>
-              </span>
-              <span className="nav-drawer-caret" aria-hidden="true">
-                <IconChevronDown size={14} />
-              </span>
-            </>
-          )}
+          <span className="nav-text">
+            <span className="nav-label">{item.label}</span>
+          </span>
+          <span className="nav-drawer-caret" aria-hidden="true">
+            <IconChevronDown size={14} />
+          </span>
         </button>
         {isOpen ? (
           <div className="nav-sub-list">
@@ -964,54 +821,28 @@ export function MainLayout() {
     );
   };
 
-  const mobileSidebarToggleLabel = sidebarOpen
-    ? t('sidebar.toggle_collapse', { defaultValue: 'Close navigation' })
-    : t('sidebar.toggle_expand', { defaultValue: 'Open navigation' });
-
-  const sidebarToggleLabel = sidebarCollapsed ? t('sidebar.expand') : t('sidebar.collapse');
-
   return (
     <div
-      className={`app-shell ${sidebarCollapsed ? 'sidebar-is-collapsed' : ''} ${
-        isPluginResourcePage ? 'plugin-resource-shell' : ''
+      className={`app-shell ${isPluginResourcePage ? 'plugin-resource-shell' : ''} ${
+        isPoolsPage ? 'pools-shell' : ''
       }`}
     >
       <div className="top-gradient-blur" aria-hidden="true" />
 
-      <header className="main-header" ref={headerRef}>
-        <button
-          type="button"
-          className="sidebar-toggle-floating"
-          onClick={() => {
-            hideRailTooltip();
-            setSidebarCollapsed((prev) => !prev);
-          }}
-          onMouseEnter={(event) =>
-            handleRailTooltipMouseEnter(event, 'sidebar-toggle', sidebarToggleLabel, shortcutText)
-          }
-          onMouseLeave={handleRailTooltipMouseLeave}
-          onFocus={(event) =>
-            handleRailTooltipFocus(event, 'sidebar-toggle', sidebarToggleLabel, shortcutText)
-          }
-          onBlur={(event) =>
-            handleRailTooltipBlur(event, 'sidebar-toggle', sidebarToggleLabel, shortcutText)
-          }
-          aria-label={`${sidebarToggleLabel} (${shortcutText})`}
-          aria-describedby={railTooltip?.targetID === 'sidebar-toggle' ? NAV_TOOLTIP_ID : undefined}
-        >
-          {sidebarCollapsed ? headerIcons.chevronRight : headerIcons.chevronLeft}
-        </button>
-
-        <div className="mobile-sidebar-actions">
+      <header className="main-header" ref={headerRef} inert={drawerOpen}>
+        <div className="drawer-opener">
           <Button
-            className="mobile-menu-btn"
+            className="drawer-opener-btn"
             variant="ghost"
             size="sm"
-            onClick={() => setSidebarOpen((prev) => !prev)}
-            title={mobileSidebarToggleLabel}
-            aria-label={mobileSidebarToggleLabel}
+            onClick={(event) => openDrawer(event.currentTarget)}
+            title={t('sidebar.open_menu')}
+            aria-label={t('sidebar.open_menu')}
+            aria-expanded={drawerOpen}
+            aria-controls={DRAWER_ID}
+            aria-keyshortcuts="Meta+B Control+B"
           >
-            {sidebarOpen ? headerIcons.close : headerIcons.menu}
+            {headerIcons.menu}
           </Button>
         </div>
 
@@ -1131,76 +962,67 @@ export function MainLayout() {
               </div>
             )}
           </div>
-          <Button variant="ghost" size="sm" onClick={logout} title={t('header.logout')}>
-            {headerIcons.logout}
-          </Button>
+          {/* A trusted-network session has nothing to log out of. */}
+          {keyless ? null : (
+            <Button variant="ghost" size="sm" onClick={logout} title={t('header.logout')}>
+              {headerIcons.logout}
+            </Button>
+          )}
         </div>
       </header>
 
       <div className="main-body">
-        <button
-          type="button"
-          className={`sidebar-backdrop ${sidebarOpen ? 'visible' : ''}`}
-          onClick={() => setSidebarOpen(false)}
-          aria-label={t('common.close')}
-          aria-hidden={!sidebarOpen}
-          tabIndex={sidebarOpen ? 0 : -1}
+        <div
+          className={`sidebar-backdrop ${drawerOpen ? 'visible' : ''}`}
+          onClick={closeDrawer}
+          aria-hidden="true"
         />
 
         <aside
-          className={`sidebar ${sidebarOpen ? 'open' : ''} ${sidebarCollapsed ? 'collapsed' : ''}`}
+          id={DRAWER_ID}
+          ref={drawerRef}
+          className={`sidebar ${drawerOpen ? 'open' : ''}`}
+          aria-label={t('sidebar.navigation')}
         >
           <div className="sidebar-header">
             <div className="sidebar-brand" title={fullBrandName}>
               <img src={INLINE_LOGO_JPEG} alt="CPAMC logo" className="sidebar-brand-logo" />
-              {showSidebarLabels && (
-                <span className="sidebar-brand-text">
-                  <span className="sidebar-brand-title">{abbrBrandName}</span>
-                  <span className="sidebar-brand-subtitle">{t('sidebar.subtitle')}</span>
-                </span>
-              )}
+              <span className="sidebar-brand-text">
+                <span className="sidebar-brand-title">{abbrBrandName}</span>
+                <span className="sidebar-brand-subtitle">{t('sidebar.subtitle')}</span>
+              </span>
             </div>
+            <button
+              type="button"
+              className="sidebar-close"
+              onClick={closeDrawer}
+              aria-label={t('sidebar.close_menu')}
+            >
+              {headerIcons.close}
+            </button>
           </div>
 
-          <div className="nav-section">
-            {navGroups.map((group, idx) => (
+          <nav className="nav-section">
+            {navGroups.map((group) => (
               <div className="nav-group" key={group.id}>
-                {showSidebarLabels ? (
-                  <div className="nav-group-label">{t(group.labelKey)}</div>
-                ) : (
-                  idx > 0 && <div className="nav-group-divider" aria-hidden="true" />
-                )}
+                <div className="nav-group-label">{t(group.labelKey)}</div>
                 {group.items.map((item) => renderNavItem(item))}
               </div>
             ))}
-          </div>
+          </nav>
         </aside>
-
-        {railTooltip && (
-          <div
-            ref={railTooltipRef}
-            id={NAV_TOOLTIP_ID}
-            className="nav-tooltip"
-            role="tooltip"
-            style={{ top: railTooltip.top }}
-          >
-            <span className="nav-tooltip-label" aria-hidden="true">
-              {railTooltip.label}
-            </span>
-            {railTooltip.meta ? <span className="nav-tooltip-meta">{railTooltip.meta}</span> : null}
-          </div>
-        )}
 
         <div
           className={`content${isLogsPage ? ' content-logs' : ''}${
             isPluginResourcePage ? ' content-plugin-resource' : ''
           }`}
           ref={contentRef}
+          inert={drawerOpen}
         >
           <main
             className={`main-content${isLogsPage ? ' main-content-logs' : ''}${
               isPluginResourcePage ? ' main-content-plugin-resource' : ''
-            }`}
+            }${isPoolsPage ? ' main-content-pools' : ''}`}
           >
             <PageTransition
               render={(location) => <MainRoutes location={location} />}

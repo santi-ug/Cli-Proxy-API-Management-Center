@@ -93,6 +93,7 @@ export function LoginPage() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const login = useAuthStore((state) => state.login);
   const restoreSession = useAuthStore((state) => state.restoreSession);
+  const connectKeyless = useAuthStore((state) => state.connectKeyless);
   const storedBase = useAuthStore((state) => state.apiBase);
   const storedKey = useAuthStore((state) => state.managementKey);
   const storedRememberPassword = useAuthStore((state) => state.rememberPassword);
@@ -129,6 +130,12 @@ export function LoginPage() {
   useEffect(() => {
     const init = async () => {
       try {
+        // A gateway that trusts this network needs no key: skip the form entirely.
+        if (await connectKeyless()) {
+          const redirect = (location.state as RedirectState | null)?.from?.pathname || '/';
+          navigate(redirect, { replace: true });
+          return;
+        }
         const autoLoggedIn = await restoreSession();
         if (autoLoggedIn) {
           setAutoLoginSuccess(true);

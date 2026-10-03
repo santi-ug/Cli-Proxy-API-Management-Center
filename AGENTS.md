@@ -4,7 +4,7 @@
 
 This is a React 19 + TypeScript + Vite management frontend for CLI Proxy API, not the proxy itself. It exclusively uses the backend v8 Management API under `/v8/management` and the v8 configuration layout; do not add v0 fallbacks or legacy config adapters. Plugin resources and custom HTTP extensions are exceptions: preserve their backend-declared paths.
 
-- `src/features/`: feature-owned pages, components, hooks, types, and logic. Current features include `dashboard`, `providers`, `authFiles`, `quota`, `config`, and `plugins`. Prefer this layout for new feature work.
+- `src/features/`: feature-owned pages, components, hooks, types, and logic. Current features include `pools` (the default route), `dashboard`, `providers`, `authFiles`, `quota`, `config`, and `plugins`. Pool providers live in `src/features/pools/registry.ts`; add a provider there rather than in the page layout. Prefer this layout for new feature work.
 - `src/pages/`: existing route pages outside the feature layout. Follow nearby conventions when modifying these; do not migrate unrelated code.
 - `src/components/`, `src/hooks/`, `src/utils/`: shared UI, hooks, and utilities. Keep feature-specific code within its feature rather than promoting it prematurely.
 - `src/services/api/`: API client, domain endpoints, and backend data normalization. `src/services/storage/`: browser persistence.

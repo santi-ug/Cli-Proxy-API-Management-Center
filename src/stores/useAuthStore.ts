@@ -10,6 +10,7 @@ import { STORAGE_KEY_AUTH } from '@/utils/constants';
 import { obfuscatedStorage } from '@/services/storage/secureStorage';
 import { apiClient } from '@/services/api/client';
 import { LegacyBackendError, probeLegacyBackend } from '@/services/api/legacyBackendProbe';
+import { probeKeylessAccess } from '@/services/api/keylessProbe';
 import { useConfigStore } from './useConfigStore';
 import { useModelsStore } from './useModelsStore';
 import { useQuotaStore } from './useQuotaStore';
@@ -17,9 +18,13 @@ import { detectApiBaseFromLocation, normalizeApiBase } from '@/utils/connection'
 
 interface AuthStoreState extends AuthState {
   connectionStatus: ConnectionStatus;
+  /** Connected without a management key because the gateway trusts this network. */
+  keyless: boolean;
 
   // 操作
   login: (credentials: LoginCredentials) => Promise<void>;
+  /** Tries the gateway without a key; true when it let us in. Never touches a stored key. */
+  connectKeyless: () => Promise<boolean>;
   logout: () => void;
   checkAuth: () => Promise<boolean>;
   restoreSession: () => Promise<boolean>;
@@ -28,6 +33,9 @@ interface AuthStoreState extends AuthState {
 }
 
 let restoreSessionPromise: Promise<boolean> | null = null;
+let keylessPromise: Promise<boolean> | null = null;
+/** Gateways that answered 401/403 to a keyless call: not asked again this page load. */
+const keylessDeniedBases = new Set<string>();
 
 export const useAuthStore = create<AuthStoreState>()(
   persist(
@@ -41,6 +49,50 @@ export const useAuthStore = create<AuthStoreState>()(
       serverBuildDate: null,
       supportsPlugin: false,
       connectionStatus: 'disconnected',
+      keyless: false,
+
+      connectKeyless: () => {
+        if (get().isAuthenticated) return Promise.resolve(true);
+        if (keylessPromise) return keylessPromise;
+
+        keylessPromise = (async () => {
+          const apiBase = normalizeApiBase(get().apiBase || detectApiBaseFromLocation());
+          if (!apiBase || keylessDeniedBases.has(apiBase)) return false;
+
+          const probe = await probeKeylessAccess(apiBase);
+          if (probe !== 'granted') {
+            if (probe === 'denied') keylessDeniedBases.add(apiBase);
+            return false;
+          }
+
+          set({
+            connectionStatus: 'connecting',
+            serverVersion: null,
+            serverBuildDate: null,
+            supportsPlugin: false,
+          });
+          useConfigStore.getState().clearCache();
+          useModelsStore.getState().clearCache();
+          useQuotaStore.getState().clearQuotaCache();
+          apiClient.setConfig({ apiBase, managementKey: '' });
+
+          try {
+            await useConfigStore.getState().fetchConfig(true);
+          } catch {
+            const { apiBase: storedBase, managementKey: storedKey } = get();
+            apiClient.setConfig({ apiBase: storedBase, managementKey: storedKey });
+            set({ connectionStatus: 'disconnected' });
+            return false;
+          }
+
+          set({ isAuthenticated: true, keyless: true, apiBase, connectionStatus: 'connected' });
+          return true;
+        })().finally(() => {
+          keylessPromise = null;
+        });
+
+        return keylessPromise;
+      },
 
       // 恢复会话并自动登录
       restoreSession: () => {
@@ -132,6 +184,7 @@ export const useAuthStore = create<AuthStoreState>()(
           // 登录成功
           set({
             isAuthenticated: true,
+            keyless: false,
             apiBase,
             managementKey,
             rememberPassword,
@@ -157,6 +210,7 @@ export const useAuthStore = create<AuthStoreState>()(
         useQuotaStore.getState().clearQuotaCache();
         set({
           isAuthenticated: false,
+          keyless: false,
           apiBase: '',
           managementKey: '',
           serverVersion: null,
@@ -185,6 +239,7 @@ export const useAuthStore = create<AuthStoreState>()(
 
           set({
             isAuthenticated: true,
+            keyless: false,
             connectionStatus: 'connected',
           });
 
