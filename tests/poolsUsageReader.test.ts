@@ -1,3 +1,8 @@
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { AccountItem } from '@/features/pools/AccountItem';
+import { providerFor } from '@/features/pools/registry';
+import i18n from '@/i18n';
 import { apiClient } from '@/services/api/client';
 import { resetGrantOperations } from '@/features/quota/providers/claude/resetGrantOperations';
 import { authFilesApi } from '@/services/api/authFiles';
@@ -7,6 +12,7 @@ import {
   fetchClaudeUsage,
   redeemClaudeReset,
   redeemCodexReset,
+  hasPendingClaudeReset,
 } from '@/features/pools/usage';
 import { toPoolAccount } from '@/features/pools/model';
 import { apiCallApi } from '@/services/api/apiCall';
@@ -275,3 +281,95 @@ for (const outcome of [
     }
   });
 }
+
+test('Pools retries an ambiguous committed Claude claim with its original request ID and exhausted grant', async () => {
+  const resetAccount = toPoolAccount({
+    name: 'ambiguous.json',
+    authIndex: 'ambiguous-fixture',
+    provider: 'claude',
+  })!;
+  let spent = 0;
+  const requestIds: string[] = [];
+  const request = spyOn(apiCallApi, 'request').mockImplementation(async (args) => {
+    let body: unknown;
+    let statusCode = 200;
+    if (args.method === 'POST') {
+      const claim = JSON.parse(args.data!);
+      requestIds.push(claim.request_id);
+      if (requestIds.length === 1) {
+        spent++;
+        statusCode = 500;
+        body = {};
+      } else body = { result: 'already_used' };
+    } else if (args.url.includes('/profile')) {
+      body = {
+        organization: {
+          uuid: '11111111-2222-3333-4444-555555555555',
+          rate_limit_tier: 'default_claude_ai',
+        },
+      };
+    } else
+      body = {
+        five_hour: { utilization: spent ? 0 : 100 },
+        cedar_ember: {
+          eligible: true,
+          at_limit: !spent,
+          grants: [
+            {
+              id: 'ambiguous_grant',
+              resets_total: 1,
+              resets_left: spent ? 0 : 1,
+              usable_now: !spent,
+            },
+          ],
+        },
+      };
+    return { statusCode, header: {}, bodyText: '', body };
+  });
+  const cooldown = spyOn(authFilesApi, 'resetCooldown').mockResolvedValue({
+    status: 'ok',
+    auth_index: 'ambiguous-fixture',
+    models: [],
+  });
+  try {
+    expect(await redeemClaudeReset(resetAccount)).toEqual({
+      ok: false,
+      messageKey: 'claude_reset.unknown',
+    });
+    const usage = await fetchClaudeUsage(resetAccount);
+    expect(usage.bankedResets).toBe(0);
+    expect(hasPendingClaudeReset(resetAccount, Date.now())).toBe(true);
+    const markup = renderToStaticMarkup(
+      createElement(AccountItem, {
+        account: resetAccount,
+        provider: providerFor('claude'),
+        columns: [],
+        entry: {
+          usage,
+          fetchedAt: Date.now(),
+          attemptedAt: Date.now(),
+          loading: false,
+          error: null,
+        },
+        now: Date.now(),
+        modeBusy: false,
+        onMode: () => {},
+        onReset: () => {},
+        onRefresh: () => {},
+      })
+    );
+    expect(markup).toContain(`>${i18n.t('claude_reset.retry')}</button>`);
+    expect(markup).not.toContain(`disabled="">${i18n.t('claude_reset.retry')}</button>`);
+    expect(await redeemClaudeReset(resetAccount)).toEqual({
+      ok: true,
+      messageKey: 'claude_reset.already_used',
+    });
+    expect(requestIds).toHaveLength(2);
+    expect(requestIds[1]).toBe(requestIds[0]);
+    expect(spent).toBe(1);
+    expect(hasPendingClaudeReset(resetAccount, Date.now())).toBe(false);
+  } finally {
+    request.mockRestore();
+    cooldown.mockRestore();
+  }
+});

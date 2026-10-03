@@ -18,6 +18,7 @@ import {
 import {
   resetGrantOperations,
   resetGrantAccountKey,
+  RETRY_WINDOW_MS,
 } from '@/features/quota/providers/claude/resetGrantOperations';
 import { selectResetGrant } from '@/features/quota/providers/claude/selectResetGrant';
 import {
@@ -119,15 +120,15 @@ const CLAUDE_REFUSALS = new Set([
 export async function redeemClaudeReset(account: PoolAccount): Promise<ResetResult> {
   const revision = apiClient.getConnectionRevision();
   const authIndex = requireAuthIndex(account);
-  const grant = selectResetGrant(await readClaudeResetGrants(authIndex), Date.now());
+  const key = resetGrantAccountKey(account.name, authIndex);
+  const operation = resetGrantOperations.inspect(key);
+  const pending = operation && !operation.code ? operation : undefined;
+  const grantId =
+    pending?.grantId ?? selectResetGrant(await readClaudeResetGrants(authIndex), Date.now())?.id;
   assertConnectionRevision(revision);
-  if (!grant) return { ok: false, messageKey: 'claude_reset.blocked' };
+  if (!grantId) return { ok: false, messageKey: 'claude_reset.blocked' };
   try {
-    const answer = await resetGrantOperations.run(
-      resetGrantAccountKey(account.name, authIndex),
-      authIndex,
-      grant.id
-    );
+    const answer = await resetGrantOperations.run(key, authIndex, grantId);
     assertConnectionRevision(revision);
     if (answer.unresolved) return { ok: false, messageKey: 'claude_reset.unknown' };
     if (answer.code === 'reset' || answer.code === 'already_used') {
@@ -304,4 +305,12 @@ export const fetchCodexUsage = createUsageReader(readCodexUsage);
 function assertConnectionRevision(revision: number) {
   if (revision !== apiClient.getConnectionRevision())
     throw new Error('Connection changed during reset');
+}
+
+export function hasPendingClaudeReset(account: PoolAccount, now: number): boolean {
+  if (account.provider !== 'claude' || !account.authIndex) return false;
+  const pending = resetGrantOperations.inspect(
+    resetGrantAccountKey(account.name, account.authIndex)
+  );
+  return Boolean(pending && !pending.code && now - pending.createdAt < RETRY_WINDOW_MS);
 }

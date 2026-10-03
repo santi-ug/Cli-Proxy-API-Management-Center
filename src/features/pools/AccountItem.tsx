@@ -1,3 +1,6 @@
+import { useSyncExternalStore } from 'react';
+import { resetGrantOperations } from '@/features/quota/providers/claude/resetGrantOperations';
+import { hasPendingClaudeReset } from './usage';
 import { useTranslation } from 'react-i18next';
 import {
   POOL_MODES,
@@ -75,6 +78,12 @@ export function AccountItem({
   onRefresh,
 }: AccountItemProps) {
   const { t } = useTranslation();
+  useSyncExternalStore(
+    resetGrantOperations.subscribe,
+    resetGrantOperations.snapshot,
+    resetGrantOperations.snapshot
+  );
+  const pendingReset = hasPendingClaudeReset(account, now);
   const windowLabel = useWindowLabel();
   const usage = entry?.usage ?? null;
   const plan = planLabel(provider, account.planOverride, usage?.planCode ?? null);
@@ -198,8 +207,12 @@ export function AccountItem({
             <span>{t('pools.active_count', { count: account.activeRequests })}</span>
           ) : null}
           {provider.redeemReset ? (
-            <button type="button" disabled={!banked} onClick={() => onReset(account)}>
-              {t('pools.use_reset')}
+            <button
+              type="button"
+              disabled={!banked && !pendingReset}
+              onClick={() => onReset(account)}
+            >
+              {t(pendingReset ? 'claude_reset.retry' : 'pools.use_reset')}
             </button>
           ) : null}
           {provider.fetchUsage ? (

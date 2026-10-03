@@ -25,6 +25,9 @@ import { AccountItem } from './AccountItem';
 import { useWindowLabel } from './useWindowLabel';
 import { usePoolsData } from './usePoolsData';
 import styles from './PoolsPage.module.scss';
+import { apiClient } from '@/services/api/client';
+import { hasPendingClaudeReset } from './usage';
+import { confirmPoolReset } from './resetConfirmation';
 
 const VIEW_STORAGE_KEY = 'cli-proxy-pools-view';
 
@@ -245,14 +248,18 @@ export function PoolsPage() {
 
   const handleReset = useCallback(
     (account: PoolAccount) => {
+      const openedRevision = apiClient.getConnectionRevision();
+      const pending = hasPendingClaudeReset(account, Date.now());
       showConfirmation({
         title: t('pools.reset_confirm_title'),
-        message: t('pools.reset_confirm_message', { name: account.label }),
-        confirmText: t('pools.reset_confirm_button'),
+        message: t(pending ? 'claude_reset.retry_confirm' : 'pools.reset_confirm_message', {
+          name: account.label,
+        }),
+        confirmText: t(pending ? 'claude_reset.retry' : 'pools.reset_confirm_button'),
         variant: 'primary',
         onConfirm: async () => {
           try {
-            const result = await redeemReset(account);
+            const result = await confirmPoolReset(account, openedRevision, redeemReset);
             if (result) showNotification(t(result.messageKey), result.ok ? 'success' : 'error');
           } catch (error) {
             showNotification(
