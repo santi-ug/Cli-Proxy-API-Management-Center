@@ -57,11 +57,11 @@
     "unsaved_changes_message": "你有未保存的更改，离开后将丢失这些更改。确定要离开吗？"
   },
   "title": {
-    "login": "CLI Proxy API Management Center",
-    "abbr": "CPAMC"
+    "login": "Fleet Proxy",
+    "abbr": "Fleet Proxy"
   },
   "splash": {
-    "title": "CLI Proxy API",
+    "title": "Fleet Proxy",
     "subtitle": "管理中心"
   },
   "login": {
@@ -1737,7 +1737,7 @@
   },
   "system_info": {
     "title": "管理中心信息",
-    "about_title": "CLI Proxy API Management Center",
+    "about_title": "Fleet Proxy",
     "models_title": "可用模型列表",
     "models_desc": "展示 /models 返回的模型，并自动使用服务器保存的 API Key 进行鉴权。",
     "models_loading": "正在加载可用模型...",
