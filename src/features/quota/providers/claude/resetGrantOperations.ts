@@ -7,6 +7,9 @@ import {
   type AnthropicResetSettledCode,
 } from '@/services/api/claudeResetGrants';
 
+export const resetGrantAccountKey = (name: string, authIndex: string | null) =>
+  JSON.stringify([name, authIndex]);
+
 export const RETRY_WINDOW_MS = 10 * 60 * 1000;
 type Operation = {
   grantId: string;

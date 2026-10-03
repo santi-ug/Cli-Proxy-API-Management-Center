@@ -5,11 +5,11 @@
  */
 
 import { isRecord } from '@/utils/helpers';
+import { normalizeNumberValue } from '@/utils/quota/parsers';
 import { normalizeCodexResetCreditsPayload } from '@/utils/quota/resetCredits';
 import { clampPercent, modelWindowId, orderWindows, type UsageWindow } from './model';
 
-const finite = (value: unknown): number | null =>
-  typeof value === 'number' && Number.isFinite(value) ? value : null;
+const finite = (value: unknown): number | null => normalizeNumberValue(value);
 
 const text = (value: unknown): string | null => {
   if (typeof value !== 'string') return null;
@@ -99,10 +99,11 @@ const MONTH_S = 28 * 24 * 3600;
 function codexWindow(
   value: unknown,
   fallback: 'five-hour' | 'weekly',
-  now: number
+  now: number,
+  limited: boolean
 ): UsageWindow | null {
   if (!isRecord(value)) return null;
-  const used = finite(value.used_percent);
+  const used = finite(value.used_percent) ?? (limited ? 100 : null);
   if (used === null) return null;
   const seconds = finite(value.limit_window_seconds);
   const kind =
@@ -142,8 +143,18 @@ export function parseCodexUsage(body: unknown, now: number): CodexUsage | null {
   if (!isRecord(body)) return null;
   const rateLimit = isRecord(body.rate_limit) ? body.rate_limit : null;
   const windows = [
-    codexWindow(rateLimit?.primary_window, 'five-hour', now),
-    codexWindow(rateLimit?.secondary_window, 'weekly', now),
+    codexWindow(
+      rateLimit?.primary_window,
+      'five-hour',
+      now,
+      rateLimit?.limit_reached === true || rateLimit?.allowed === false
+    ),
+    codexWindow(
+      rateLimit?.secondary_window,
+      'weekly',
+      now,
+      rateLimit?.limit_reached === true || rateLimit?.allowed === false
+    ),
   ].filter((window): window is UsageWindow => window !== null);
   // Two windows of the same kind would collide on one column; keep the first.
   const unique = windows.filter(

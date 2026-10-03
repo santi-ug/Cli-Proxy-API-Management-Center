@@ -22,6 +22,7 @@ import {
 } from './model';
 import { providerFor } from './registry';
 import type { ResetResult } from './usage';
+import { writePoolMode } from './mode';
 
 const LIST_POLL_MS = 30_000;
 const SCHEDULER_TICK_MS = 15_000;
@@ -175,19 +176,9 @@ export function usePoolsData() {
         },
       }));
       try {
-        await authFilesApi.patchFields(account.name, { pool_mode: mode });
-        if (mode !== 'auto') {
-          await authFilesApi.setStatus(
-            account.name,
-            mode === 'off',
-            account.authIndex ?? undefined
-          );
-        }
+        const changed = await writePoolMode(account, mode);
         await loadFiles();
-        return true;
-      } catch {
-        await loadFiles();
-        return false;
+        return changed;
       } finally {
         setOverrides((current) => {
           const next = { ...current };

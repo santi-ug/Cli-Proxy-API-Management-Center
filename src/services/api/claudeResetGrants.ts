@@ -251,8 +251,12 @@ async function readAccount(authIndex: string, path: string): Promise<Record<stri
   return response.body;
 }
 
+export function readClaudeUsageWithGrants(authIndex: string) {
+  return readAccount(authIndex, ANTHROPIC_RESET_GRANT_STATUS_PATH);
+}
+
 export async function readClaudeResetGrants(authIndex: string) {
-  const body = await readAccount(authIndex, ANTHROPIC_RESET_GRANT_STATUS_PATH);
+  const body = await readClaudeUsageWithGrants(authIndex);
   const status = parseAnthropicResetGrantStatus(body.cedar_ember);
   if (!status) throw new AnthropicResetGrantError('malformed');
   return status;

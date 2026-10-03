@@ -436,7 +436,40 @@ export function MainLayout() {
 
   // A route change (any nav entry point) never leaves the drawer covering the new page.
   useEffect(() => {
+    const navigatedFromDrawer = useDrawerStore.getState().open;
+    if (navigatedFromDrawer) wasDrawerOpenRef.current = false;
     closeDrawer();
+    if (!navigatedFromDrawer) return;
+    // PageTransition inserts the new layer after the route changes.
+    const content = contentRef.current;
+    if (!content) return;
+    const focusHeading = () => {
+      const heading = content.querySelector<HTMLElement>(
+        '.page-transition__layer:not(.page-transition__layer--exit):not(.page-transition__layer--stacked) h1, ' +
+          '.page-transition__layer:not(.page-transition__layer--exit):not(.page-transition__layer--stacked) h2'
+      );
+      if (
+        !heading ||
+        heading.closest<HTMLElement>('.page-transition__layer')?.dataset.routePathname !==
+          location.pathname
+      )
+        return;
+      heading.tabIndex = -1;
+      heading.focus();
+      observer.disconnect();
+    };
+    const observer = new MutationObserver(focusHeading);
+    observer.observe(content, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+    const frame = requestAnimationFrame(focusHeading);
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
   }, [location.pathname, closeDrawer]);
 
   const closeLanguageMenu = useCallback(() => setLanguageMenuOpen(false), []);
@@ -775,7 +808,9 @@ export function MainLayout() {
         to={item.path}
         end={item.path === '/'}
         className={({ isActive }) => `${className} ${isActive ? 'active' : ''}`}
-        onClick={closeDrawer}
+        onClick={() => {
+          if (location.pathname === item.path) closeDrawer();
+        }}
       >
         <span className="nav-icon">{item.icon}</span>
         <span className="nav-text">
@@ -982,6 +1017,8 @@ export function MainLayout() {
           id={DRAWER_ID}
           ref={drawerRef}
           className={`sidebar ${drawerOpen ? 'open' : ''}`}
+          role="dialog"
+          aria-modal={drawerOpen ? true : undefined}
           aria-label={t('sidebar.navigation')}
         >
           <div className="sidebar-header">

@@ -64,7 +64,7 @@ const readCount = (value: unknown): number | null =>
 
 export const emailLocalPart = (email: string): string => email.split('@')[0] ?? email;
 
-/** `santi@gmail.com` → `s•••@g•••.com`. Anything that is not an address is fully hidden. */
+/** `account@example.com` → `a•••@e•••.com`. Anything that is not an address is fully hidden. */
 export function maskEmail(email: string): string {
   const at = email.lastIndexOf('@');
   if (at <= 0 || at === email.length - 1) return '•••';
@@ -91,7 +91,8 @@ export function toPoolAccount(file: AuthFileItem): PoolAccount | null {
     name,
     authIndex,
     provider: resolveAuthProvider(file) || 'unknown',
-    label: readText(file, 'pool_label') ?? (email ? emailLocalPart(email) : stripExtension(name)),
+    label:
+      readText(file, 'pool_label') ?? (email ? maskEmail(email) : maskEmail(stripExtension(name))),
     email,
     role: readText(file, 'pool_role'),
     planOverride: readText(file, 'pool_plan'),

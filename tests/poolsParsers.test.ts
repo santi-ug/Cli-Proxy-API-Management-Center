@@ -208,3 +208,33 @@ describe('parseCodexConsumeCode', () => {
     expect(parseCodexConsumeCode('reset')).toBeNull();
   });
 });
+
+test('Codex accepts numeric strings for percent, duration, and reset', () => {
+  const parsed = parseCodexUsage(
+    {
+      rate_limit: {
+        primary_window: {
+          used_percent: '45',
+          limit_window_seconds: '18000',
+          reset_at: '1800000000',
+        },
+      },
+    },
+    0
+  );
+  expect(parsed?.windows[0]).toMatchObject({
+    kind: 'five-hour',
+    leftPercent: 55,
+    resetAtMs: 1800000000000,
+  });
+});
+
+test('Codex refuses allowance when limits are reached without a reported percent', () => {
+  for (const flags of [{ limit_reached: true }, { allowed: false }]) {
+    const parsed = parseCodexUsage(
+      { rate_limit: { ...flags, primary_window: { reset_after_seconds: '60' } } },
+      1000
+    );
+    expect(parsed?.windows[0]).toMatchObject({ leftPercent: 0, resetAtMs: 61000 });
+  }
+});

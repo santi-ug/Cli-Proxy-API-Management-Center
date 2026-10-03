@@ -36,12 +36,12 @@ const win = (id: string, leftPercent: number, model: string | null = null): Usag
 });
 
 describe('toPoolAccount', () => {
-  test('label falls back from pool_label to the email local part to the file name', () => {
-    expect(account({ name: 'a.json', email: 'santi@gmail.com', pool_label: 'Santi' }).label).toBe(
-      'Santi'
-    );
-    expect(account({ name: 'a.json', email: 'mom.home@gmail.com' }).label).toBe('mom.home');
-    expect(account({ name: 'claude-work.json' }).label).toBe('claude-work');
+  test('label preserves pool_label and masks email and filename fallbacks', () => {
+    expect(
+      account({ name: 'a.json', email: 'account@example.com', pool_label: 'Santi' }).label
+    ).toBe('Santi');
+    expect(account({ name: 'a.json', email: 'reserve@example.com' }).label).toBe('r•••@e•••.com');
+    expect(account({ name: 'claude-work.json' }).label).toBe('•••');
   });
 
   test('missing or unknown pool fields degrade to safe defaults', () => {
@@ -83,13 +83,13 @@ describe('toPoolAccount', () => {
 
 describe('maskEmail', () => {
   test('keeps the first letter, the domain initial and the top-level domain', () => {
-    expect(maskEmail('santi@gmail.com')).toBe('s•••@g•••.com');
+    expect(maskEmail('account@example.com')).toBe('a•••@e•••.com');
     expect(maskEmail('a@mail.example.co.uk')).toBe('a•••@m•••.uk');
   });
 
   test('hides anything that is not an address', () => {
     expect(maskEmail('not-an-email')).toBe('•••');
-    expect(maskEmail('@gmail.com')).toBe('•••');
+    expect(maskEmail('@example.com')).toBe('•••');
   });
 });
 

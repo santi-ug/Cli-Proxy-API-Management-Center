@@ -1,3 +1,4 @@
+import { toPoolAccount } from '@/features/pools/model';
 import { selectResetGrant } from '../src/features/quota/providers/claude/selectResetGrant';
 
 import { afterEach, describe, expect, test } from 'bun:test';
@@ -14,6 +15,7 @@ import {
 import { apiCallApi, type ApiCallRequest } from '../src/services/api/apiCall';
 import {
   createResetGrantOperations,
+  resetGrantAccountKey,
   RETRY_WINDOW_MS,
 } from '../src/features/quota/providers/claude/resetGrantOperations';
 
@@ -351,4 +353,16 @@ test('Claude card uses Codex count and action styles and shared confirmation, no
   expect(hook).toContain("pending ? 'claude_reset.retry_confirm'");
   expect(hook).not.toContain('<Modal');
   expect(hook).not.toContain('status.grants.map');
+});
+
+test('ambiguous reset retries retain one request ID across quota and pools identity', async () => {
+  const h = setup();
+  const operations = createResetGrantOperations(h.deps);
+  const fromQuota = resetGrantAccountKey('fixture.json', 'a');
+  const pool = toPoolAccount({ name: 'fixture.json', authIndex: 'a', provider: 'claude' })!;
+  await expect(operations.run(fromQuota, 'a', grant.id)).rejects.toThrow();
+  await expect(
+    operations.run(resetGrantAccountKey(pool.name, pool.authIndex), 'a', grant.id)
+  ).rejects.toThrow();
+  expect(h.ids).toEqual(['request-1', 'request-1']);
 });

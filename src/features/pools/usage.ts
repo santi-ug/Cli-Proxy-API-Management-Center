@@ -11,14 +11,18 @@ import { apiClient } from '@/services/api/client';
 import { authFilesApi } from '@/services/api/authFiles';
 import {
   readClaudeResetGrants,
+  readClaudeUsageWithGrants,
+  parseAnthropicResetGrantStatus,
   type AnthropicResetGrantStatus,
 } from '@/services/api/claudeResetGrants';
-import { resetGrantOperations } from '@/features/quota/providers/claude/resetGrantOperations';
+import {
+  resetGrantOperations,
+  resetGrantAccountKey,
+} from '@/features/quota/providers/claude/resetGrantOperations';
 import { selectResetGrant } from '@/features/quota/providers/claude/selectResetGrant';
 import {
   CLAUDE_PROFILE_URL,
   CLAUDE_REQUEST_HEADERS,
-  CLAUDE_USAGE_URL,
   CODEX_RATE_LIMIT_RESET_CREDITS_CONSUME_URL,
   CODEX_RATE_LIMIT_RESET_CREDITS_URL,
   CODEX_REQUEST_HEADERS,
@@ -85,22 +89,21 @@ export function countClaudeBankedResets(status: AnthropicResetGrantStatus, now: 
     .reduce((sum, grant) => sum + grant.resetsLeft, 0);
 }
 
-export async function fetchClaudeUsage(account: PoolAccount): Promise<AccountUsage> {
+async function readClaudeUsage(account: PoolAccount): Promise<AccountUsage> {
   const authIndex = requireAuthIndex(account);
-  const [usage, grants, tier] = await Promise.allSettled([
-    getOk(authIndex, CLAUDE_USAGE_URL, { ...CLAUDE_REQUEST_HEADERS }),
-    readClaudeResetGrants(authIndex),
+  const [usage, tier] = await Promise.allSettled([
+    readClaudeUsageWithGrants(authIndex),
     readClaudeTier(authIndex),
   ]);
   if (usage.status === 'rejected') throw usage.reason;
   const windows = parseClaudeUsage(usage.value);
+  const grants = parseAnthropicResetGrantStatus(usage.value.cedar_ember);
   if (!windows) throw new Error('unexpected usage response');
   return {
     windows,
     planCode: tier.status === 'fulfilled' ? tier.value : null,
     // Only a parsed reset-grant block proves a count; otherwise the page shows none.
-    bankedResets:
-      grants.status === 'fulfilled' ? countClaudeBankedResets(grants.value, Date.now()) : null,
+    bankedResets: grants ? countClaudeBankedResets(grants, Date.now()) : null,
   };
 }
 
@@ -118,7 +121,11 @@ export async function redeemClaudeReset(account: PoolAccount): Promise<ResetResu
   const grant = selectResetGrant(await readClaudeResetGrants(authIndex), Date.now());
   if (!grant) return { ok: false, messageKey: 'claude_reset.blocked' };
   try {
-    const answer = await resetGrantOperations.run(account.key, authIndex, grant.id);
+    const answer = await resetGrantOperations.run(
+      resetGrantAccountKey(account.name, authIndex),
+      authIndex,
+      grant.id
+    );
     if (answer.unresolved) return { ok: false, messageKey: 'claude_reset.unknown' };
     if (answer.code === 'reset' || answer.code === 'already_used') {
       await clearCooldown(authIndex);
@@ -131,7 +138,7 @@ export async function redeemClaudeReset(account: PoolAccount): Promise<ResetResu
         : 'claude_reset.blocked',
     };
   } catch {
-    const pending = resetGrantOperations.inspect(account.key);
+    const pending = resetGrantOperations.inspect(resetGrantAccountKey(account.name, authIndex));
     return {
       ok: false,
       messageKey: pending && !pending.code ? 'claude_reset.unknown' : 'claude_reset.blocked',
@@ -153,7 +160,7 @@ function codexHeader(account: PoolAccount): Record<string, string> {
   };
 }
 
-export async function fetchCodexUsage(account: PoolAccount): Promise<AccountUsage> {
+async function readCodexUsage(account: PoolAccount): Promise<AccountUsage> {
   const authIndex = requireAuthIndex(account);
   const header = codexHeader(account);
   const [usage, credits] = await Promise.allSettled([
@@ -233,3 +240,41 @@ async function clearCooldown(authIndex: string) {
     // The provider reset succeeded; the cooldown simply runs out on its own.
   }
 }
+
+/** Share the manual-refresh floor and in-flight read across page remounts. */
+export function createUsageReader(
+  read: (account: PoolAccount) => Promise<AccountUsage>,
+  now = () => Date.now(),
+  revision = () => apiClient.getConnectionRevision()
+) {
+  let session = revision();
+  const reads = new Map<
+    string,
+    { attemptedAt: number; pending: Promise<AccountUsage>; loading: boolean }
+  >();
+  return (account: PoolAccount): Promise<AccountUsage> => {
+    if (session !== revision()) {
+      session = revision();
+      reads.clear();
+    }
+    const key = account.authIndex ?? account.key;
+    const previous = reads.get(key);
+    if (previous && (previous.loading || now() - previous.attemptedAt < 60_000))
+      return previous.pending;
+    const pending = read(account);
+    const entry = { attemptedAt: now(), pending, loading: true };
+    reads.set(key, entry);
+    void pending.then(
+      () => {
+        entry.loading = false;
+      },
+      () => {
+        entry.loading = false;
+      }
+    );
+    return pending;
+  };
+}
+
+export const fetchClaudeUsage = createUsageReader(readClaudeUsage);
+export const fetchCodexUsage = createUsageReader(readCodexUsage);

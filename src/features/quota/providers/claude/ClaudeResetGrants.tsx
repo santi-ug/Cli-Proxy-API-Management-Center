@@ -10,7 +10,11 @@ import {
 } from '@/services/api/claudeResetGrants';
 import type { AuthFileItem } from '@/types';
 import { normalizeAuthIndex } from '@/utils/quota';
-import { resetGrantOperations, RETRY_WINDOW_MS } from './resetGrantOperations';
+import {
+  resetGrantOperations,
+  resetGrantAccountKey,
+  RETRY_WINDOW_MS,
+} from './resetGrantOperations';
 import { selectResetGrant } from './selectResetGrant';
 
 /** Card-owned reads; the session-scoped journal owns spending and ambiguous retries. */
@@ -30,7 +34,7 @@ export function useClaudeResetGrants(
   const showNotification = useNotificationStore((state) => state.showNotification);
   const now = useNow();
   const authIndex = normalizeAuthIndex(file.auth_index ?? file.authIndex);
-  const key = JSON.stringify([file.name, authIndex]);
+  const key = resetGrantAccountKey(file.name, authIndex);
   const [status, setStatus] = useState<AnthropicResetGrantStatus | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
