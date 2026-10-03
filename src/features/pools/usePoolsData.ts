@@ -194,11 +194,9 @@ export function usePoolsData() {
     async (account: PoolAccount): Promise<ResetResult | null> => {
       const { redeemReset: redeem } = providerFor(account.provider);
       if (!redeem) return null;
-      try {
-        return await redeem(account);
-      } finally {
-        void fetchAccount(account);
-      }
+      const result = await redeem(account);
+      if (result.ok) void fetchAccount(account);
+      return result;
     },
     [fetchAccount]
   );

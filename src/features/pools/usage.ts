@@ -117,8 +117,10 @@ const CLAUDE_REFUSALS = new Set([
 ]);
 
 export async function redeemClaudeReset(account: PoolAccount): Promise<ResetResult> {
+  const revision = apiClient.getConnectionRevision();
   const authIndex = requireAuthIndex(account);
   const grant = selectResetGrant(await readClaudeResetGrants(authIndex), Date.now());
+  assertConnectionRevision(revision);
   if (!grant) return { ok: false, messageKey: 'claude_reset.blocked' };
   try {
     const answer = await resetGrantOperations.run(
@@ -126,9 +128,12 @@ export async function redeemClaudeReset(account: PoolAccount): Promise<ResetResu
       authIndex,
       grant.id
     );
+    assertConnectionRevision(revision);
     if (answer.unresolved) return { ok: false, messageKey: 'claude_reset.unknown' };
     if (answer.code === 'reset' || answer.code === 'already_used') {
-      await clearCooldown(authIndex);
+      await fetchClaudeUsage.invalidate(account);
+      await clearCooldown(authIndex, revision);
+      assertConnectionRevision(revision);
       return { ok: true, messageKey: `claude_reset.${answer.code}` };
     }
     return {
@@ -197,12 +202,14 @@ export function creditRedeemRequestId(accountId: string, creditId: string): stri
 }
 
 export async function redeemCodexReset(account: PoolAccount): Promise<ResetResult> {
+  const revision = apiClient.getConnectionRevision();
   const authIndex = requireAuthIndex(account);
   const header = codexHeader(account);
   const credits = parseCodexResetCredits(
     await getOk(authIndex, CODEX_RATE_LIMIT_RESET_CREDITS_URL, header),
     Date.now()
   );
+  assertConnectionRevision(revision);
   const credit = credits?.[0];
   if (!credit) return { ok: false, messageKey: 'pools.reset_result.no_credit' };
 
@@ -220,9 +227,14 @@ export async function redeemCodexReset(account: PoolAccount): Promise<ResetResul
     }),
   });
   if (!isOk(result)) throw new Error(getApiCallErrorMessage(result));
+  assertConnectionRevision(revision);
   const code = parseCodexConsumeCode(result.body);
   if (!code) return { ok: false, messageKey: 'pools.reset_result.unknown' };
-  if (code === 'reset' || code === 'already_redeemed') await clearCooldown(authIndex);
+  if (code === 'reset' || code === 'already_redeemed') {
+    await fetchCodexUsage.invalidate(account);
+    await clearCooldown(authIndex, revision);
+    assertConnectionRevision(revision);
+  }
   return {
     ok: code === 'reset' || code === 'already_redeemed',
     messageKey: `pools.reset_result.${code}`,
@@ -233,7 +245,8 @@ export async function redeemCodexReset(account: PoolAccount): Promise<ResetResul
  * Clears the gateway's own cooldown so routing resumes now instead of after it
  * expires. Best effort: the reset already happened upstream.
  */
-async function clearCooldown(authIndex: string) {
+async function clearCooldown(authIndex: string, revision: number) {
+  if (revision !== apiClient.getConnectionRevision()) return;
   try {
     await authFilesApi.resetCooldown(authIndex);
   } catch {
@@ -252,7 +265,7 @@ export function createUsageReader(
     string,
     { attemptedAt: number; pending: Promise<AccountUsage>; loading: boolean }
   >();
-  return (account: PoolAccount): Promise<AccountUsage> => {
+  const fetchUsage = (account: PoolAccount): Promise<AccountUsage> => {
     if (session !== revision()) {
       session = revision();
       reads.clear();
@@ -274,7 +287,21 @@ export function createUsageReader(
     );
     return pending;
   };
+  return Object.assign(fetchUsage, {
+    /** Only a confirmed reset bypasses the manual floor. Finish an old read first. */
+    async invalidate(account: PoolAccount) {
+      const key = account.authIndex ?? account.key;
+      const previous = reads.get(key);
+      if (previous) await previous.pending.catch(() => undefined);
+      if (reads.get(key) === previous) reads.delete(key);
+    },
+  });
 }
 
 export const fetchClaudeUsage = createUsageReader(readClaudeUsage);
 export const fetchCodexUsage = createUsageReader(readCodexUsage);
+
+function assertConnectionRevision(revision: number) {
+  if (revision !== apiClient.getConnectionRevision())
+    throw new Error('Connection changed during reset');
+}

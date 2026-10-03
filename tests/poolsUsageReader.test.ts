@@ -1,5 +1,13 @@
+import { apiClient } from '@/services/api/client';
+import { resetGrantOperations } from '@/features/quota/providers/claude/resetGrantOperations';
+import { authFilesApi } from '@/services/api/authFiles';
 import { expect, test } from 'bun:test';
-import { createUsageReader, fetchClaudeUsage } from '@/features/pools/usage';
+import {
+  createUsageReader,
+  fetchClaudeUsage,
+  redeemClaudeReset,
+  redeemCodexReset,
+} from '@/features/pools/usage';
 import { toPoolAccount } from '@/features/pools/model';
 import { apiCallApi } from '@/services/api/apiCall';
 import { spyOn } from 'bun:test';
@@ -58,3 +66,212 @@ test('Claude windows and grants come from the same cedar_ember request', async (
     request.mockRestore();
   }
 });
+
+test('confirmed Claude reset within the manual floor reads new allowance and remaining grants', async () => {
+  const resetAccount = toPoolAccount({
+    name: 'reset.json',
+    authIndex: 'reset-fixture',
+    provider: 'claude',
+  })!;
+  let spent = false;
+  let usageReads = 0;
+  const request = spyOn(apiCallApi, 'request').mockImplementation(async (args) => {
+    const profile = args.url.includes('/profile');
+    if (!profile) usageReads++;
+    return {
+      statusCode: 200,
+      header: {},
+      bodyText: '',
+      body: profile
+        ? { organization: { rate_limit_tier: 'default_claude_ai' } }
+        : {
+            five_hour: { utilization: spent ? 0 : 100 },
+            cedar_ember: {
+              eligible: true,
+              at_limit: !spent,
+              grants: [
+                {
+                  id: 'reset_fixture',
+                  resets_total: 1,
+                  resets_left: spent ? 0 : 1,
+                  usable_now: !spent,
+                },
+              ],
+            },
+          },
+    };
+  });
+  const claim = spyOn(resetGrantOperations, 'run').mockImplementation(async () => {
+    spent = true;
+    return { code: 'reset', unresolved: false };
+  });
+  const cooldown = spyOn(authFilesApi, 'resetCooldown').mockResolvedValue({
+    status: 'ok',
+    auth_index: 'reset-fixture',
+    models: [],
+  });
+  try {
+    const before = await fetchClaudeUsage(resetAccount);
+    expect(before.windows[0].leftPercent).toBe(0);
+    expect(before.bankedResets).toBe(1);
+    expect(await redeemClaudeReset(resetAccount)).toEqual({
+      ok: true,
+      messageKey: 'claude_reset.reset',
+    });
+    const after = await fetchClaudeUsage(resetAccount);
+    expect(after.windows[0].leftPercent).toBe(100);
+    expect(after.bankedResets).toBe(0);
+    expect(usageReads).toBe(3);
+    await fetchClaudeUsage(resetAccount);
+    expect(usageReads).toBe(3);
+  } finally {
+    request.mockRestore();
+    claim.mockRestore();
+    cooldown.mockRestore();
+  }
+});
+
+test('invalidation waits for an old in-flight read before allowing a post-reset read', async () => {
+  let resolve: (value: { windows: []; planCode: null; bankedResets: number }) => void = () => {};
+  let calls = 0;
+  const read = createUsageReader(() => {
+    calls++;
+    return calls === 1
+      ? new Promise((done) => {
+          resolve = done;
+        })
+      : Promise.resolve({ windows: [], planCode: null, bankedResets: 0 });
+  });
+  const old = read(account);
+  const invalidating = read.invalidate(account);
+  expect(read(account)).toBe(old);
+  resolve({ windows: [], planCode: null, bankedResets: 1 });
+  await invalidating;
+  expect((await read(account)).bankedResets).toBe(0);
+  expect(calls).toBe(2);
+});
+
+test('connection change during Codex credit lookup prevents consume and cooldown', async () => {
+  let revision = 1;
+  const revisionSpy = spyOn(apiClient, 'getConnectionRevision').mockImplementation(() => revision);
+  const calls: string[] = [];
+  const request = spyOn(apiCallApi, 'request').mockImplementation(async (args) => {
+    calls.push(args.method);
+    revision++;
+    return {
+      statusCode: 200,
+      header: {},
+      bodyText: '',
+      body: {
+        credits: [
+          {
+            id: 'fixture-credit',
+            status: 'available',
+            reset_type: 'codex_rate_limits',
+            granted_at: '2026-01-01',
+            expires_at: '2099-01-01',
+          },
+        ],
+      },
+    };
+  });
+  const cooldown = spyOn(authFilesApi, 'resetCooldown').mockResolvedValue({
+    status: 'ok',
+    auth_index: 'fixture',
+    models: [],
+  });
+  try {
+    await expect(redeemCodexReset(account)).rejects.toThrow('Connection changed');
+    expect(calls).toEqual(['GET']);
+    expect(cooldown).not.toHaveBeenCalled();
+  } finally {
+    request.mockRestore();
+    cooldown.mockRestore();
+    revisionSpy.mockRestore();
+  }
+});
+
+test('connection change during Codex consume prevents cooldown against replacement gateway', async () => {
+  let revision = 1;
+  const revisionSpy = spyOn(apiClient, 'getConnectionRevision').mockImplementation(() => revision);
+  const request = spyOn(apiCallApi, 'request').mockImplementation(async (args) => {
+    if (args.method === 'POST') revision++;
+    return {
+      statusCode: 200,
+      header: {},
+      bodyText: '',
+      body:
+        args.method === 'POST'
+          ? { code: 'reset' }
+          : {
+              credits: [
+                {
+                  id: 'fixture-credit',
+                  status: 'available',
+                  reset_type: 'codex_rate_limits',
+                  granted_at: '2026-01-01',
+                  expires_at: '2099-01-01',
+                },
+              ],
+            },
+    };
+  });
+  const cooldown = spyOn(authFilesApi, 'resetCooldown').mockResolvedValue({
+    status: 'ok',
+    auth_index: 'fixture',
+    models: [],
+  });
+  try {
+    await expect(redeemCodexReset(account)).rejects.toThrow('Connection changed');
+    expect(cooldown).not.toHaveBeenCalled();
+  } finally {
+    request.mockRestore();
+    cooldown.mockRestore();
+    revisionSpy.mockRestore();
+  }
+});
+
+for (const outcome of [
+  { code: 'not_limited', unresolved: false },
+  { code: 'rate_limited', unresolved: true },
+] as const) {
+  test(`refused or ambiguous Claude reset ${outcome.code} keeps the manual floor`, async () => {
+    const resetAccount = toPoolAccount({
+      name: `${outcome.code}.json`,
+      authIndex: outcome.code,
+      provider: 'claude',
+    })!;
+    let usageReads = 0;
+    const request = spyOn(apiCallApi, 'request').mockImplementation(async (args) => {
+      const profile = args.url.includes('/profile');
+      if (!profile) usageReads++;
+      return {
+        statusCode: 200,
+        header: {},
+        bodyText: '',
+        body: profile
+          ? { organization: { rate_limit_tier: 'default_claude_ai' } }
+          : {
+              five_hour: { utilization: 100 },
+              cedar_ember: {
+                eligible: true,
+                at_limit: true,
+                grants: [
+                  { id: 'fixture-grant', resets_total: 1, resets_left: 1, usable_now: true },
+                ],
+              },
+            },
+      };
+    });
+    const claim = spyOn(resetGrantOperations, 'run').mockResolvedValue(outcome);
+    try {
+      const before = await fetchClaudeUsage(resetAccount);
+      expect((await redeemClaudeReset(resetAccount)).ok).toBe(false);
+      expect(await fetchClaudeUsage(resetAccount)).toBe(before);
+      expect(usageReads).toBe(2);
+    } finally {
+      request.mockRestore();
+      claim.mockRestore();
+    }
+  });
+}
