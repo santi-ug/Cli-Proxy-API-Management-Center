@@ -232,13 +232,7 @@
   color: var(--pool-muted);
 }
 
-.segs {
-  display: flex;
-  gap: 4px;
-}
-
-.seg {
-  flex: 1;
+.poolBar {
   height: 5px;
   overflow: hidden;
   border-radius: 3px;
@@ -249,6 +243,12 @@
     height: 100%;
     background: var(--pool-accent);
   }
+}
+
+.basis {
+  margin-top: 8px;
+  color: var(--pool-muted);
+  font-size: 12px;
 }
 
 .subs {

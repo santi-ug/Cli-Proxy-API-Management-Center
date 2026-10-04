@@ -20,7 +20,13 @@ import {
   type UsageEntry,
   type ViewMode,
 } from './model';
-import { accentStyle, compareProviders, providerFor, type PoolProvider } from './registry';
+import {
+  accentStyle,
+  compareProviders,
+  planPriceUsd,
+  providerFor,
+  type PoolProvider,
+} from './registry';
 import { AccountItem } from './AccountItem';
 import { useWindowLabel } from './useWindowLabel';
 import { usePoolsData } from './usePoolsData';
@@ -65,7 +71,13 @@ function ProviderTotals({
   const { t } = useTranslation();
   const windowLabel = useWindowLabel();
   const { provider, accounts } = group;
-  const summary = summarizeProvider(accounts, (account) => usage[account.key]?.usage ?? null);
+  const summary = summarizeProvider(
+    accounts,
+    (account) => usage[account.key]?.usage ?? null,
+    (account, reading) => planPriceUsd(provider, account.planOverride, reading?.planCode ?? null)
+  );
+  const weeklyLabel =
+    summary.models.length > 0 ? t('pools.weekly_all_models') : t('pools.window_weekly');
   const { Glyph } = provider;
 
   return (
@@ -81,32 +93,38 @@ function ProviderTotals({
       </div>
       {summary.weekly ? (
         <div className={styles.pct}>
-          {summary.weekly.left}
+          {summary.weekly.leftPercent}
           <small>%</small>
-          <span>{t('pools.of_capacity', { capacity: summary.weekly.capacity })}</span>
+          <span>
+            {t('pools.remaining')}{' '}
+            {t('pools.of_capacity', { capacity: summary.weekly.capacityPercent })}
+          </span>
         </div>
       ) : (
         <div className={`${styles.pct} ${styles.pctPending}`}>
-          {provider.fetchUsage ? t('pools.loading_quota') : t('pools.no_usage_source')}
+          {!provider.fetchUsage
+            ? t('pools.no_usage_source')
+            : accounts.some((account) => usage[account.key]?.loading)
+              ? t('pools.loading_quota')
+              : t('pools.quota_unavailable')}
         </div>
       )}
       <div className={styles.wl}>
-        {summary.models.length > 0 ? t('pools.weekly_all_models') : t('pools.window_weekly')}
+        {weeklyLabel} · {t('pools.plan_value_remaining')}
       </div>
-      <div className={styles.segs} aria-hidden="true">
-        {summary.weeklySegments.map((left, index) => (
-          <span key={accounts[index].key} className={styles.seg}>
-            <i style={{ width: `${left ?? 0}%` }} />
-          </span>
-        ))}
-      </div>
+      {summary.weekly ? (
+        <div className={styles.poolBar} aria-hidden="true">
+          <i style={{ width: `${summary.weekly.fillPercent}%` }} />
+        </div>
+      ) : null}
+      <div className={styles.basis}>{t('pools.capacity_basis')}</div>
       <div className={styles.subs}>
         {summary.fiveHour ? (
           <div className={styles.sub}>
             <span>{t('pools.window_five_hour')}</span>
             <span>
-              <b>{summary.fiveHour.left}%</b>{' '}
-              {t('pools.of_capacity', { capacity: summary.fiveHour.capacity })}
+              <b>{t('pools.left', { percent: summary.fiveHour.leftPercent })}</b>{' '}
+              {t('pools.of_capacity', { capacity: summary.fiveHour.capacityPercent })}
             </span>
           </div>
         ) : null}
@@ -119,8 +137,8 @@ function ProviderTotals({
                 : ` · ${t('pools.only_holders', { names: model.holders.join(', ') })}`}
             </span>
             <span>
-              <b>{model.total.left}%</b>{' '}
-              {t('pools.of_capacity', { capacity: model.total.capacity })}
+              <b>{t('pools.left', { percent: model.total.leftPercent })}</b>{' '}
+              {t('pools.of_capacity', { capacity: model.total.capacityPercent })}
             </span>
           </div>
         ))}

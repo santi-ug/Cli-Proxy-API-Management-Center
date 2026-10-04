@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import i18n from '@/i18n';
 import type { AnthropicResetGrant } from '@/services/api/claudeResetGrants';
 import { formatResetClock, formatDuration, formatResetIn } from '@/features/pools/format';
-import { compareProviders, planLabel, providerFor } from '@/features/pools/registry';
+import { compareProviders, planLabel, planPriceUsd, providerFor } from '@/features/pools/registry';
 import { countClaudeBankedResets, creditRedeemRequestId } from '@/features/pools/usage';
 
 describe('plan lookup', () => {
@@ -26,6 +26,27 @@ describe('plan lookup', () => {
 
   test('plans are scoped per provider', () => {
     expect(planLabel(claude, null, 'plus')).toBe('plus');
+  });
+
+  test('plan values use monthly list prices on the same scale across providers', () => {
+    expect(planPriceUsd(claude, null, 'default_claude_max_5x')).toBe(100);
+    expect(planPriceUsd(claude, null, 'default_claude_max_20x')).toBe(200);
+    expect(planPriceUsd(claude, null, 'default_claude_ai')).toBe(20);
+    expect(planPriceUsd(codex, null, 'pro')).toBe(200);
+    expect(planPriceUsd(codex, null, 'plus')).toBe(20);
+  });
+
+  test('the reported tier beats a stale label; a known label covers a failed tier read', () => {
+    expect(planPriceUsd(claude, 'Pro ($20)', 'default_claude_max_5x')).toBe(100);
+    expect(planPriceUsd(claude, 'Max 5x ($100)', null)).toBe(100);
+    expect(planPriceUsd(codex, 'Pro 20x ($200)', null)).toBe(200);
+  });
+
+  test("unrecognized tiers, custom labels and another provider's plans stay unknown", () => {
+    expect(planPriceUsd(codex, 'Plus ($20)', 'pro_500')).toBeNull();
+    expect(planPriceUsd(claude, 'Team ($30)', null)).toBeNull();
+    expect(planPriceUsd(claude, 'Plus ($20)', null)).toBeNull();
+    expect(planPriceUsd(codex, null, null)).toBeNull();
   });
 });
 

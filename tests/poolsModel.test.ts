@@ -19,7 +19,12 @@ import {
   type UsageWindow,
 } from '@/features/pools/model';
 
+import { planPriceUsd, providerFor } from '@/features/pools/registry';
+
 const MINUTE = 60_000;
+
+const priceOf = (account: PoolAccount, usage: AccountUsage | null) =>
+  planPriceUsd(providerFor(account.provider), account.planOverride, usage?.planCode ?? null);
 
 function account(file: Partial<AuthFileItem> & { name: string }): PoolAccount {
   const parsed = toPoolAccount({ provider: 'claude', ...file });
@@ -202,13 +207,25 @@ describe('summarizeProvider', () => {
     ],
   ]);
 
-  test('totals what is left against accounts × 100%, from the rounded per-account numbers', () => {
-    const summary = summarizeProvider([santi, mom], (item) => usage.get(item.key) ?? null);
-    expect(summary.weekly).toEqual({ left: 133, capacity: 200 });
-    expect(summary.weeklySegments).toEqual([61, 72]);
-    expect(summary.fiveHour).toEqual({ left: 134, capacity: 200 });
+  test('weights remaining plan value by price, rounding only the combined result', () => {
+    const summary = summarizeProvider([santi, mom], (item) => usage.get(item.key) ?? null, priceOf);
+    expect(summary.weekly).toMatchObject({
+      leftPercent: 76,
+      capacityPercent: 120,
+    });
+    expect(summary.weekly?.fillPercent).toBeCloseTo(63.23333333, 6);
+    expect(summary.fiveHour).toMatchObject({
+      leftPercent: 54,
+      capacityPercent: 120,
+    });
+    expect(summary.fiveHour?.fillPercent).toBeCloseTo(45.33333333, 6);
     expect(summary.models).toEqual([
-      { model: 'Fable', total: { left: 48, capacity: 100 }, holders: ['Santi'], everyone: false },
+      {
+        model: 'Fable',
+        total: { leftPercent: 48, capacityPercent: 100, fillPercent: 48 },
+        holders: ['Santi'],
+        everyone: false,
+      },
     ]);
     expect(summary.banked).toBe(1);
     expect(summary.next?.label).toBe('Santi');
@@ -216,24 +233,180 @@ describe('summarizeProvider', () => {
   });
 
   test('says nothing about banked resets or activity when no account reports them', () => {
-    const quiet = account({ name: 'q.json' });
-    const summary = summarizeProvider([quiet], () => ({
-      windows: [win('weekly', 90)],
-      planCode: null,
-      bankedResets: null,
-    }));
+    const quiet = account({ name: 'q.json', pool_plan: 'Pro ($20)' });
+    const summary = summarizeProvider(
+      [quiet],
+      () => ({
+        windows: [win('weekly', 90)],
+        planCode: null,
+        bankedResets: null,
+      }),
+      priceOf
+    );
     expect(summary.banked).toBeNull();
     expect(summary.active).toBeNull();
     expect(summary.fiveHour).toBeNull();
+    expect(summary.weekly).toEqual({ leftPercent: 18, capacityPercent: 20, fillPercent: 90 });
   });
 
-  test('an account still loading leaves an empty segment and no share of the total', () => {
-    const summary = summarizeProvider([santi, mom], (item) =>
-      item.key === santi.key ? (usage.get(item.key) ?? null) : null
+  test('an account still loading prevents a misleading partial total', () => {
+    const summary = summarizeProvider(
+      [santi, mom],
+      (item) => (item.key === santi.key ? (usage.get(item.key) ?? null) : null),
+      priceOf
     );
-    expect(summary.weekly).toEqual({ left: 61, capacity: 100 });
-    expect(summary.weeklySegments).toEqual([61, null]);
-    expect(summary.models[0]?.everyone).toBe(false);
+    expect(summary.weekly).toBeNull();
+    expect(summary.models).toEqual([]);
+  });
+
+  test.each([
+    ['claude', 'Max 5x ($100)', 0, 100, 20],
+    ['claude', 'Max 5x ($100)', 100, 0, 100],
+    ['claude', 'Max 5x ($100)', 100, 100, 120],
+    ['claude', 'Max 20x ($200)', 0, 100, 20],
+    ['claude', 'Max 20x ($200)', 100, 100, 220],
+    ['codex', 'Pro 20x ($200)', 0, 100, 20],
+    ['codex', 'Pro 20x ($200)', 100, 0, 200],
+    ['codex', 'Pro 20x ($200)', 100, 100, 220],
+    ['codex', 'Pro 20x ($200)', 0, 0, 0],
+  ])(
+    '%s %s at %i%% plus a base plan at %i%% leaves %i%%',
+    (provider, plan, primary, reserve, expected) => {
+      const accounts = [
+        account({ name: 'primary.json', provider, pool_plan: plan }),
+        account({
+          name: 'reserve.json',
+          provider,
+          pool_plan: provider === 'claude' ? 'Pro ($20)' : 'Plus ($20)',
+        }),
+      ];
+      const summary = summarizeProvider(
+        accounts,
+        (item) => ({
+          windows: [win('weekly', item === accounts[0] ? primary : reserve)],
+          planCode: null,
+          bankedResets: null,
+        }),
+        priceOf
+      );
+      expect(summary.weekly?.leftPercent).toBe(expected);
+    }
+  );
+
+  test('identical full plans add to 200% and fill one complete bar', () => {
+    const accounts = [
+      account({ name: 'a.json', pool_plan: 'Max 5x ($100)' }),
+      account({ name: 'b.json', pool_plan: 'Max 5x ($100)' }),
+    ];
+    const summary = summarizeProvider(
+      accounts,
+      () => ({
+        windows: [win('weekly', 100)],
+        planCode: null,
+        bankedResets: null,
+      }),
+      priceOf
+    );
+    expect(summary.weekly).toEqual({ leftPercent: 200, capacityPercent: 200, fillPercent: 100 });
+  });
+
+  test.each([
+    [[100, 100, 100, 100], 520, 100],
+    [[100, 50, 75, 25], 380, (380 / 520) * 100],
+  ])(
+    'two $200 plans plus $100 and $20 keep the fixed scale at %j remaining',
+    (remaining, left, fill) => {
+      const accounts = ['Max 20x ($200)', 'Max 20x ($200)', 'Max 5x ($100)', 'Pro ($20)'].map(
+        (plan, index) => account({ name: `account-${index}.json`, pool_plan: plan })
+      );
+      const readings = new Map(accounts.map((item, index) => [item.key, remaining[index]]));
+      const summary = summarizeProvider(
+        accounts,
+        (item) => ({
+          windows: [win('weekly', readings.get(item.key) ?? 0)],
+          planCode: null,
+          bankedResets: null,
+        }),
+        priceOf
+      );
+      expect(summary.weekly?.leftPercent).toBe(left);
+      expect(summary.weekly?.capacityPercent).toBe(520);
+      expect(summary.weekly?.fillPercent).toBeCloseTo(fill);
+    }
+  );
+
+  test('adding an empty larger plan leaves existing plan value on the same scale', () => {
+    const primary = account({ name: 'p.json', pool_plan: 'Max 5x ($100)' });
+    const extra = account({ name: 'e.json', pool_plan: 'Max 20x ($200)' });
+    const summary = summarizeProvider(
+      [primary, extra],
+      (item) => ({
+        windows: [win('weekly', item === primary ? 80 : 0)],
+        planCode: null,
+        bankedResets: null,
+      }),
+      priceOf
+    );
+    expect(summary.weekly?.leftPercent).toBe(80);
+    expect(summary.weekly?.capacityPercent).toBe(300);
+    expect(summary.weekly?.fillPercent).toBeCloseTo((80 / 300) * 100);
+  });
+
+  test('capacity does not depend on account order and the bar remains proportional', () => {
+    const primary = account({ name: 'p.json', pool_plan: 'Max 5x ($100)' });
+    const reserve = account({ name: 'r.json', pool_plan: 'Pro ($20)' });
+    const summary = summarizeProvider(
+      [reserve, primary],
+      (item) => ({
+        windows: [win('weekly', item === primary ? 74 : 51)],
+        planCode: null,
+        bankedResets: null,
+      }),
+      priceOf
+    );
+    expect(summary.weekly).toEqual({ leftPercent: 84, capacityPercent: 120, fillPercent: 421 / 6 });
+  });
+
+  test('a window only counts its holders and uses unrounded usage', () => {
+    const primary = account({ name: 'p.json', provider: 'codex', pool_plan: 'Pro 20x ($200)' });
+    const reserve = account({ name: 'r.json', provider: 'codex', pool_plan: 'Plus ($20)' });
+    const summary = summarizeProvider(
+      [primary, reserve],
+      (item) => ({
+        windows:
+          item === primary ? [win('weekly', 95.49)] : [win('weekly', 100), win('five-hour', 80)],
+        planCode: null,
+        bankedResets: null,
+      }),
+      priceOf
+    );
+    expect(summary.weekly).toEqual({
+      leftPercent: 211,
+      capacityPercent: 220,
+      fillPercent: (95.49 * 200 + 100 * 20) / 220,
+    });
+    expect(summary.fiveHour).toEqual({ leftPercent: 16, capacityPercent: 20, fillPercent: 80 });
+  });
+
+  test("an unknown holder's tier hides totals without inventing a price", () => {
+    const custom = account({ name: 'custom.json', pool_plan: 'Team ($30)' });
+    const summary = summarizeProvider(
+      [santi, custom],
+      (item) =>
+        item === santi
+          ? (usage.get(santi.key) ?? null)
+          : { windows: [win('weekly', 100)], planCode: 'unrecognized', bankedResets: 2 },
+      priceOf
+    );
+    expect(summary.weekly).toBeNull();
+    // Unknown capacity on a non-holder does not poison the primary's other windows.
+    expect(summary.fiveHour).toEqual({ leftPercent: 34, capacityPercent: 100, fillPercent: 34.4 });
+    expect(summary.models[0]?.total).toEqual({
+      leftPercent: 48,
+      capacityPercent: 100,
+      fillPercent: 48,
+    });
+    expect(summary.banked).toBe(3);
   });
 });
 
@@ -249,14 +422,22 @@ describe('time helpers', () => {
       days: 3,
       hours: 4,
     });
-    expect(countdownParts(3 * 24 * 60 * MINUTE + 5)).toEqual({ kind: 'days_hours', days: 3, hours: 0 });
+    expect(countdownParts(3 * 24 * 60 * MINUTE + 5)).toEqual({
+      kind: 'days_hours',
+      days: 3,
+      hours: 0,
+    });
     // 2 hr 47 min must not read as 3 hr, and the minutes show even at zero.
     expect(countdownParts((2 * 60 + 47) * MINUTE + 59_000)).toEqual({
       kind: 'hours_minutes',
       hours: 2,
       minutes: 47,
     });
-    expect(countdownParts(3 * 60 * MINUTE)).toEqual({ kind: 'hours_minutes', hours: 3, minutes: 0 });
+    expect(countdownParts(3 * 60 * MINUTE)).toEqual({
+      kind: 'hours_minutes',
+      hours: 3,
+      minutes: 0,
+    });
     expect(countdownParts(10_000)).toEqual({ kind: 'minutes', minutes: 1 });
   });
 });
