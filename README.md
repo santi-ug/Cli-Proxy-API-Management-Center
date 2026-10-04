@@ -1,12 +1,14 @@
 <div align="center">
 
-<img src="./logo.jpg" alt="CLI Proxy API" width="144">
+<img src="./src/assets/fleet-proxy.svg" alt="Fleet Proxy" width="72">
 
-# CLI Proxy API Management Center
+# Fleet Proxy
 
 **Your proxy, at a glance. Your configuration, in control.**
 
-A lightweight Web UI for CLI Proxy API.<br>
+Fleet Proxy is Santi's account-pool dashboard, based on CLI Proxy API Management Center.<br>
+Auto follows the router; On enables an account behind the primary; Off disables it immediately.
+If a switch response is lost, refresh to check its saved state.
 Manage providers, credentials, quotas, and logs — from a single HTML file.
 
 [![Backend: v8](https://img.shields.io/badge/Backend-v8-5865F2?style=flat-square)](https://github.com/router-for-me/CLIProxyAPI)
