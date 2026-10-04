@@ -3,7 +3,7 @@ import type { AuthFileItem } from '@/types';
 import {
   accountStatus,
   isUsageDue,
-  largestUnit,
+  countdownParts,
   maskEmail,
   oldestFetch,
   parseViewMode,
@@ -238,15 +238,26 @@ describe('summarizeProvider', () => {
 });
 
 describe('time helpers', () => {
-  test('splitDuration and largestUnit round down, never below one minute', () => {
+  test('splitDuration and countdownParts round down, never below one minute', () => {
     expect(splitDuration((2 * 24 * 60 + 4 * 60 + 59) * MINUTE)).toEqual({
       days: 2,
       hours: 4,
       minutes: 59,
     });
-    expect(largestUnit(3 * 24 * 60 * MINUTE + 5)).toEqual({ unit: 'd', value: 3 });
-    expect(largestUnit(2 * 60 * MINUTE + 40 * MINUTE)).toEqual({ unit: 'hr', value: 2 });
-    expect(largestUnit(10_000)).toEqual({ unit: 'min', value: 1 });
+    expect(countdownParts((3 * 24 * 60 + 4 * 60 + 30) * MINUTE)).toEqual({
+      kind: 'days_hours',
+      days: 3,
+      hours: 4,
+    });
+    expect(countdownParts(3 * 24 * 60 * MINUTE + 5)).toEqual({ kind: 'days_hours', days: 3, hours: 0 });
+    // 2 hr 47 min must not read as 3 hr, and the minutes show even at zero.
+    expect(countdownParts((2 * 60 + 47) * MINUTE + 59_000)).toEqual({
+      kind: 'hours_minutes',
+      hours: 2,
+      minutes: 47,
+    });
+    expect(countdownParts(3 * 60 * MINUTE)).toEqual({ kind: 'hours_minutes', hours: 3, minutes: 0 });
+    expect(countdownParts(10_000)).toEqual({ kind: 'minutes', minutes: 1 });
   });
 });
 

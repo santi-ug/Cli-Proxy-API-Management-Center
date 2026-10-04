@@ -320,12 +320,21 @@ export function splitDuration(ms: number): DurationParts {
   };
 }
 
-/** The single largest unit, rounded down, never below one minute: `in 2 hr`, `in 3 d`. */
-export function largestUnit(ms: number): { unit: 'min' | 'hr' | 'd'; value: number } {
+export type CountdownParts =
+  | { kind: 'days_hours'; days: number; hours: number }
+  | { kind: 'hours_minutes'; hours: number; minutes: number }
+  | { kind: 'minutes'; minutes: number };
+
+/**
+ * The two largest units, rounded down, so `2 hr 47 min` never reads as `3 hr`.
+ * The smaller unit always shows, even at zero; under an hour it is minutes only,
+ * never below one minute.
+ */
+export function countdownParts(ms: number): CountdownParts {
   const { days, hours, minutes } = splitDuration(ms);
-  if (days > 0) return { unit: 'd', value: days };
-  if (hours > 0) return { unit: 'hr', value: hours };
-  return { unit: 'min', value: Math.max(1, minutes) };
+  if (days > 0) return { kind: 'days_hours', days, hours };
+  if (hours > 0) return { kind: 'hours_minutes', hours, minutes };
+  return { kind: 'minutes', minutes: Math.max(1, minutes) };
 }
 
 // ---------------------------------------------------------------------------
