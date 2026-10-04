@@ -2227,7 +2227,7 @@
     "of_capacity": "из {{capacity}}%",
     "remaining": "осталось",
     "plan_weighted_estimate": "Оценка с учётом ёмкости тарифов",
-    "capacity_unknown": "ёмкость неизвестна",
+    "capacity_basis": "100% = ёмкость самого большого тарифа",
     "weekly_all_models": "Неделя, все модели",
     "window_five_hour": "5 часов",
     "window_weekly": "Неделя",

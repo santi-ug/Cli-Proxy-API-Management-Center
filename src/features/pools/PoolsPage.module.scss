@@ -232,14 +232,7 @@
   color: var(--pool-muted);
 }
 
-.segs {
-  display: flex;
-  gap: 4px;
-}
-
-.seg {
-  flex: 1 1 0;
-  min-width: 0;
+.poolBar {
   height: 5px;
   overflow: hidden;
   border-radius: 3px;
@@ -252,18 +245,10 @@
   }
 }
 
-.weights {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 16px;
+.basis {
   margin-top: 8px;
   color: var(--pool-muted);
   font-size: 12px;
-
-  b {
-    color: var(--pool-fg);
-    font-weight: 500;
-  }
 }
 
 .subs {

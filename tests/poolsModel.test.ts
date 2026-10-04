@@ -213,14 +213,23 @@ describe('summarizeProvider', () => {
       (item) => usage.get(item.key) ?? null,
       weightOf
     );
-    expect(summary.weekly).toEqual({ leftPercent: 63 });
-    expect(summary.weeklySegments).toEqual([
-      { leftPercent: 61, weight: 5 },
-      { leftPercent: 72, weight: 1 },
-    ]);
-    expect(summary.fiveHour).toEqual({ leftPercent: 45 });
+    expect(summary.weekly).toEqual({
+      leftPercent: 76,
+      capacityPercent: 120,
+      fillPercent: (61.4 * 5 + 72.4) / 6,
+    });
+    expect(summary.fiveHour).toEqual({
+      leftPercent: 54,
+      capacityPercent: 120,
+      fillPercent: (34.4 * 5 + 100) / 6,
+    });
     expect(summary.models).toEqual([
-      { model: 'Fable', total: { leftPercent: 48 }, holders: ['Santi'], everyone: false },
+      {
+        model: 'Fable',
+        total: { leftPercent: 48, capacityPercent: 100, fillPercent: 48 },
+        holders: ['Santi'],
+        everyone: false,
+      },
     ]);
     expect(summary.banked).toBe(1);
     expect(summary.next?.label).toBe('Santi');
@@ -243,27 +252,24 @@ describe('summarizeProvider', () => {
     expect(summary.fiveHour).toBeNull();
   });
 
-  test('an account still loading keeps its segment and prevents a misleading partial total', () => {
+  test('an account still loading prevents a misleading partial total', () => {
     const summary = summarizeProvider(
       [santi, mom],
       (item) => (item.key === santi.key ? (usage.get(item.key) ?? null) : null),
       weightOf
     );
     expect(summary.weekly).toBeNull();
-    expect(summary.weeklySegments).toEqual([
-      { leftPercent: 61, weight: 5 },
-      { leftPercent: null, weight: null },
-    ]);
     expect(summary.models).toEqual([]);
   });
 
   test.each([
-    ['claude', 'Max 5x ($100)', 0, 100, 17],
-    ['claude', 'Max 5x ($100)', 100, 0, 83],
+    ['claude', 'Max 5x ($100)', 0, 100, 20],
+    ['claude', 'Max 5x ($100)', 100, 0, 100],
+    ['claude', 'Max 5x ($100)', 100, 100, 120],
     ['claude', 'Max 20x ($200)', 0, 100, 5],
     ['codex', 'Pro 20x ($200)', 0, 100, 5],
-    ['codex', 'Pro 20x ($200)', 100, 0, 95],
-    ['codex', 'Pro 20x ($200)', 100, 100, 100],
+    ['codex', 'Pro 20x ($200)', 100, 0, 100],
+    ['codex', 'Pro 20x ($200)', 100, 100, 105],
     ['codex', 'Pro 20x ($200)', 0, 0, 0],
   ])(
     '%s %s at %i%% plus a base plan at %i%% leaves %i%%',
@@ -289,6 +295,38 @@ describe('summarizeProvider', () => {
     }
   );
 
+  test('identical full plans add to 200% and fill one complete bar', () => {
+    const accounts = [
+      account({ name: 'a.json', pool_plan: 'Max 5x ($100)' }),
+      account({ name: 'b.json', pool_plan: 'Max 5x ($100)' }),
+    ];
+    const summary = summarizeProvider(
+      accounts,
+      () => ({
+        windows: [win('weekly', 100)],
+        planCode: null,
+        bankedResets: null,
+      }),
+      weightOf
+    );
+    expect(summary.weekly).toEqual({ leftPercent: 200, capacityPercent: 200, fillPercent: 100 });
+  });
+
+  test('capacity does not depend on account order and the bar remains proportional', () => {
+    const primary = account({ name: 'p.json', pool_plan: 'Max 5x ($100)' });
+    const reserve = account({ name: 'r.json', pool_plan: 'Pro ($20)' });
+    const summary = summarizeProvider(
+      [reserve, primary],
+      (item) => ({
+        windows: [win('weekly', item === primary ? 74 : 51)],
+        planCode: null,
+        bankedResets: null,
+      }),
+      weightOf
+    );
+    expect(summary.weekly).toEqual({ leftPercent: 84, capacityPercent: 120, fillPercent: 421 / 6 });
+  });
+
   test('a window only counts its holders and uses unrounded usage', () => {
     const primary = account({ name: 'p.json', provider: 'codex', pool_plan: 'Pro 20x ($200)' });
     const reserve = account({ name: 'r.json', provider: 'codex', pool_plan: 'Plus ($20)' });
@@ -302,9 +340,12 @@ describe('summarizeProvider', () => {
       }),
       weightOf
     );
-    expect(summary.weekly).toEqual({ leftPercent: 96 });
-    expect(summary.fiveHour).toEqual({ leftPercent: 80 });
-    expect(summary.weeklySegments.map((segment) => segment.weight)).toEqual([20, 1]);
+    expect(summary.weekly).toEqual({
+      leftPercent: 100,
+      capacityPercent: 105,
+      fillPercent: (95.49 * 20 + 100) / 21,
+    });
+    expect(summary.fiveHour).toEqual({ leftPercent: 80, capacityPercent: 100, fillPercent: 80 });
   });
 
   test("an unknown holder's tier hides totals without inventing an equal weight", () => {
@@ -318,10 +359,13 @@ describe('summarizeProvider', () => {
       weightOf
     );
     expect(summary.weekly).toBeNull();
-    expect(summary.weeklySegments[1]).toEqual({ leftPercent: 100, weight: null });
     // Unknown capacity on a non-holder does not poison the primary's other windows.
-    expect(summary.fiveHour).toEqual({ leftPercent: 34 });
-    expect(summary.models[0]?.total).toEqual({ leftPercent: 48 });
+    expect(summary.fiveHour).toEqual({ leftPercent: 34, capacityPercent: 100, fillPercent: 34.4 });
+    expect(summary.models[0]?.total).toEqual({
+      leftPercent: 48,
+      capacityPercent: 100,
+      fillPercent: 48,
+    });
     expect(summary.banked).toBe(3);
   });
 });

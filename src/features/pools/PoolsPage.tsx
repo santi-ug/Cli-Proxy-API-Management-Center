@@ -95,7 +95,10 @@ function ProviderTotals({
         <div className={styles.pct}>
           {summary.weekly.leftPercent}
           <small>%</small>
-          <span>{t('pools.remaining')}</span>
+          <span>
+            {t('pools.remaining')}{' '}
+            {t('pools.of_capacity', { capacity: summary.weekly.capacityPercent })}
+          </span>
         </div>
       ) : (
         <div className={`${styles.pct} ${styles.pctPending}`}>
@@ -110,34 +113,18 @@ function ProviderTotals({
         {weeklyLabel} · {t('pools.plan_weighted_estimate')}
       </div>
       {summary.weekly ? (
-        <div className={styles.segs} aria-hidden="true">
-          {summary.weeklySegments.map((segment, index) =>
-            segment.leftPercent !== null ? (
-              <span
-                key={accounts[index].key}
-                className={styles.seg}
-                style={{ flexGrow: segment.weight ?? 0 }}
-              >
-                <i style={{ width: `${segment.leftPercent}%` }} />
-              </span>
-            ) : null
-          )}
+        <div className={styles.poolBar} aria-hidden="true">
+          <i style={{ width: `${summary.weekly.fillPercent}%` }} />
         </div>
       ) : null}
-      <div className={styles.weights}>
-        {summary.weeklySegments.map((segment, index) => (
-          <span key={accounts[index].key}>
-            {accounts[index].label}{' '}
-            <b>{segment.weight === null ? t('pools.capacity_unknown') : `${segment.weight}×`}</b>
-          </span>
-        ))}
-      </div>
+      <div className={styles.basis}>{t('pools.capacity_basis')}</div>
       <div className={styles.subs}>
         {summary.fiveHour ? (
           <div className={styles.sub}>
             <span>{t('pools.window_five_hour')}</span>
             <span>
-              <b>{t('pools.left', { percent: summary.fiveHour.leftPercent })}</b>
+              <b>{t('pools.left', { percent: summary.fiveHour.leftPercent })}</b>{' '}
+              {t('pools.of_capacity', { capacity: summary.fiveHour.capacityPercent })}
             </span>
           </div>
         ) : null}
@@ -150,7 +137,8 @@ function ProviderTotals({
                 : ` · ${t('pools.only_holders', { names: model.holders.join(', ') })}`}
             </span>
             <span>
-              <b>{t('pools.left', { percent: model.total.leftPercent })}</b>
+              <b>{t('pools.left', { percent: model.total.leftPercent })}</b>{' '}
+              {t('pools.of_capacity', { capacity: model.total.capacityPercent })}
             </span>
           </div>
         ))}

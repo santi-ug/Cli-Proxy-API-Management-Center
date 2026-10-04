@@ -220,15 +220,12 @@ export type PercentTone = 'good' | 'mid' | 'low';
 export const percentTone = (leftPercent: number): PercentTone =>
   leftPercent >= 60 ? 'good' : leftPercent >= 25 ? 'mid' : 'low';
 
-/** Estimated percent of this window's combined plan capacity remaining. */
+/** Largest plan holding this window = 100%; smaller plans add capacity above 100%. */
 export interface PoolTotal {
   leftPercent: number;
-}
-
-export interface PoolSegment {
-  leftPercent: number | null;
-  /** Base-plan equivalents, never inferred from price. Null means an unknown tier. */
-  weight: number | null;
+  capacityPercent: number;
+  /** Unrounded share of combined capacity, used by the single continuous bar. */
+  fillPercent: number;
 }
 
 export interface ModelTotal {
@@ -241,8 +238,6 @@ export interface ModelTotal {
 
 export interface ProviderSummary {
   weekly: PoolTotal | null;
-  /** One entry per account, in account order, including unknown readings and tiers. */
-  weeklySegments: PoolSegment[];
   fiveHour: PoolTotal | null;
   models: ModelTotal[];
   banked: number | null;
@@ -266,6 +261,7 @@ export function summarizeProvider(
   const totalFor = (id: string): PoolTotal | null => {
     let left = 0;
     let capacity = 0;
+    let largest = 0;
     for (let index = 0; index < accounts.length; index += 1) {
       const usage = usages[index];
       if (!usage) return null;
@@ -275,8 +271,15 @@ export function summarizeProvider(
       if (weight === null || !Number.isFinite(weight) || weight <= 0) return null;
       left += clampPercent(window.leftPercent) * weight;
       capacity += weight;
+      largest = Math.max(largest, weight);
     }
-    return capacity > 0 ? { leftPercent: Math.round(left / capacity) } : null;
+    return largest > 0
+      ? {
+          leftPercent: Math.round(left / largest),
+          capacityPercent: Math.round((capacity / largest) * 100),
+          fillPercent: left / capacity,
+        }
+      : null;
   };
 
   const models = usageColumns(usages)
@@ -304,13 +307,6 @@ export function summarizeProvider(
 
   return {
     weekly: totalFor('weekly'),
-    weeklySegments: usages.map((usage, index) => {
-      const window = findWindow(usage, 'weekly');
-      return {
-        leftPercent: window ? Math.round(window.leftPercent) : null,
-        weight: weights[index],
-      };
-    }),
     fiveHour: totalFor('five-hour'),
     models,
     banked: bankedCounts.length > 0 ? sum(bankedCounts) : null,

@@ -2230,7 +2230,7 @@
     "of_capacity": "of {{capacity}}%",
     "remaining": "left",
     "plan_weighted_estimate": "Plan-weighted estimate",
-    "capacity_unknown": "capacity unknown",
+    "capacity_basis": "100% = largest plan",
     "weekly_all_models": "Weekly, all models",
     "window_five_hour": "5-hour",
     "window_weekly": "Weekly",
