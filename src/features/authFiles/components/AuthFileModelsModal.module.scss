@@ -33,7 +33,7 @@
 @media (hover: hover) and (pointer: fine) {
   .item:hover {
     background: var(--bg-tertiary);
-    border-color: color-mix(in srgb, var(--border-color) 70%, transparent);
+    border-color: var(--border-color);
   }
 }
 
@@ -56,25 +56,24 @@
 }
 
 .modelType {
-  font-family: $font-mono;
-  font-size: 10px;
-  font-weight: 650;
+  font-size: 11px;
+  font-weight: 500;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: var(--text-tertiary);
+  color: var(--text-secondary);
   padding: 1px 6px;
-  border-radius: $radius-full;
+  border-radius: 6px;
   border: 1px solid var(--border-color);
 }
 
 .excludedBadge {
   margin-left: auto;
-  font-size: 10.5px;
-  font-weight: 600;
+  font-size: 11px;
+  font-weight: 500;
   color: var(--failure-badge-text);
   background: var(--failure-badge-bg);
   border: 1px solid var(--failure-badge-border);
-  border-radius: $radius-full;
+  border-radius: 6px;
   padding: 1px 7px;
   white-space: nowrap;
 }

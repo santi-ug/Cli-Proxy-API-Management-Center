@@ -1,12 +1,12 @@
 @use '../../styles/mixins' as *;
 @use '../../styles/variables' as *;
 
+// No own padding: the shared content column already supplies the page gutter.
 .page {
   display: flex;
   flex-direction: column;
   gap: 20px;
   width: 100%;
-  padding: 24px;
   box-sizing: border-box;
 }
 
@@ -33,7 +33,6 @@
 
 @media (max-width: 768px) {
   .page {
-    padding: 16px;
     gap: 16px;
   }
 }

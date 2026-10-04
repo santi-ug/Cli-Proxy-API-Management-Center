@@ -693,6 +693,7 @@ export function OAuthPage() {
           showKimiSignUp ? (
             <div className={styles.featuredActions}>
               <Button
+                variant="secondary"
                 onClick={() =>
                   window.open(
                     provider.id === 'kimi-ai'

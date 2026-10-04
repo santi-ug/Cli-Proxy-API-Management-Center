@@ -26,7 +26,7 @@
 
 .searchInput {
   height: 38px !important;
-  border-radius: 10px !important;
+  border-radius: $radius-md !important;
   font-size: 13px !important;
   padding-right: 128px !important;
 }
@@ -40,15 +40,14 @@
 .searchCount {
   display: inline-flex;
   align-items: center;
-  min-height: 26px;
-  padding: 0 8px;
-  border-radius: $radius-full;
-  color: var(--text-secondary);
-  font-family: $font-mono;
-  font-size: 11.5px;
-  font-weight: 650;
+  min-height: 22px;
+  padding: 0 7px;
+  border-radius: 6px;
+  color: var(--count-badge-text);
+  font-size: 12px;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
-  background: color-mix(in srgb, var(--text-primary) 6%, transparent);
+  background: var(--count-badge-bg);
   pointer-events: none;
   white-space: nowrap;
 }
@@ -60,60 +59,81 @@
   justify-content: center;
   width: 30px;
   height: 30px;
-  border-radius: $radius-full;
-  border: 1px solid var(--text-primary);
-  background: var(--text-primary);
-  color: var(--bg-secondary);
+  border-radius: 6px;
+  color: var(--text-primary);
   transition:
-    transform var(--dur-press, 160ms) var(--ease-out-strong, ease-out),
+    transform 0.1s,
     background-color $transition-fast,
-    border-color $transition-fast,
     opacity $transition-fast;
 
   &:active:not(:disabled) {
-    transform: scale(0.94);
+    transform: scale(0.95);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--text-primary);
+    outline-offset: 2px;
   }
 
   &:disabled {
-    opacity: 0.45;
+    color: var(--text-tertiary);
     cursor: not-allowed;
   }
 }
 
 @media (hover: hover) and (pointer: fine) {
   .searchButton:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--text-primary) 86%, var(--bg-secondary));
-    border-color: transparent;
+    background: var(--bg-tertiary);
   }
 }
 
+/* 上一个 / 下一个：账号池页同款 34px 描边图标按钮 */
 .searchActions {
   display: flex;
+  align-items: center;
   gap: 6px;
   flex-shrink: 0;
 
-  button {
-    min-width: 38px;
-    width: 38px;
-    height: 38px;
-    padding: 0 !important;
-    border-radius: 10px;
+  button:global(.btn) {
+    min-width: 34px;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border: 1px solid var(--border-color);
+    border-radius: $radius-md;
+    color: var(--text-primary);
+  }
+
+  button:global(.btn):hover:not(:disabled) {
+    background: var(--bg-tertiary);
+  }
+
+  button:global(.btn):active:not(:disabled) {
+    transform: scale(0.95);
   }
 }
 
 /* ---------- 编辑器面板 ---------- */
 
+/* CodeMirror 主题覆盖：页面底色作编辑区、卡片色作行号栏，选区与匹配用安静的中性/警示色。
+   选择器多带一层 .cm-editor，压过 oneDark / 默认浅色主题注入的同级规则。 */
 .editorWrapper {
   width: 100%;
   flex: 0 0 auto;
   height: clamp(500px, 70vh, 1040px);
   border: 1px solid var(--border-color);
-  border-radius: 14px;
+  border-radius: $radius-lg;
   overflow: hidden;
-  background: var(--bg-primary);
+  background: var(--bg-secondary);
+  transition: border-color $transition-fast;
 
   @supports (height: 100dvh) {
     height: clamp(500px, 70dvh, 1040px);
+  }
+
+  /* 去掉 CodeMirror 的虚线 outline 后，由外框承担焦点提示（与输入框同款） */
+  &:focus-within {
+    border-color: var(--text-secondary);
   }
 
   :global {
@@ -122,6 +142,11 @@
       font-size: 13px;
       font-family: $font-mono;
       background: transparent;
+      color: var(--text-primary);
+    }
+
+    .cm-editor.cm-focused {
+      outline: none;
     }
 
     .cm-scroller {
@@ -131,33 +156,84 @@
       overscroll-behavior: contain;
     }
 
-    .cm-gutters {
-      border-right: 1px solid var(--border-color);
-      background: color-mix(in srgb, var(--bg-secondary) 86%, transparent);
+    .cm-editor .cm-content {
+      caret-color: var(--text-primary);
     }
 
-    .cm-lineNumbers .cm-gutterElement {
+    .cm-editor .cm-cursor,
+    .cm-editor .cm-dropCursor {
+      border-left-color: var(--text-primary);
+    }
+
+    .cm-editor .cm-gutters {
+      border-right: 1px solid var(--border-color);
+      background: var(--bg-primary);
+      color: var(--text-tertiary);
+    }
+
+    .cm-editor .cm-lineNumbers .cm-gutterElement {
       padding: 0 8px 0 12px;
       min-width: 40px;
-      color: var(--text-muted);
+      color: var(--text-tertiary);
     }
 
-    .cm-activeLine,
-    .cm-activeLineGutter {
-      background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+    .cm-editor .cm-activeLine {
+      background: color-mix(in srgb, var(--text-primary) 4%, transparent);
     }
 
-    .cm-selectionMatch {
-      background: rgba(224, 170, 20, 0.24);
+    .cm-editor .cm-activeLineGutter {
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
     }
 
-    .cm-searchMatch {
-      background: rgba(224, 170, 20, 0.32);
-      outline: 1px solid rgba(224, 170, 20, 0.48);
+    .cm-editor .cm-selectionBackground,
+    .cm-editor.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground,
+    .cm-editor .cm-content ::selection {
+      background: color-mix(in srgb, var(--text-primary) 14%, transparent);
     }
 
-    .cm-searchMatch-selected {
-      background: rgba(198, 87, 70, 0.32);
+    .cm-editor .cm-selectionMatch {
+      background: color-mix(in srgb, var(--text-primary) 10%, transparent);
+    }
+
+    .cm-editor.cm-focused .cm-matchingBracket,
+    .cm-editor.cm-focused .cm-nonmatchingBracket {
+      background: color-mix(in srgb, var(--text-primary) 16%, transparent);
+    }
+
+    .cm-editor .cm-searchMatch {
+      background: color-mix(in srgb, var(--warning-color) 22%, transparent);
+      outline: 1px solid color-mix(in srgb, var(--warning-color) 45%, transparent);
+    }
+
+    .cm-editor .cm-searchMatch.cm-searchMatch-selected {
+      background: color-mix(in srgb, var(--warning-color) 40%, transparent);
+    }
+
+    .cm-editor .cm-foldPlaceholder {
+      border: 1px solid var(--border-color);
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+    }
+
+    .cm-editor .cm-panels {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+    }
+
+    .cm-editor .cm-panels.cm-panels-top {
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .cm-editor .cm-panels.cm-panels-bottom {
+      border-top: 1px solid var(--border-color);
+    }
+
+    .cm-editor .cm-tooltip {
+      border: 1px solid var(--border-color);
+      border-radius: $radius-md;
+      background: var(--floating-surface, var(--bg-primary));
+      color: var(--text-primary);
     }
   }
 }
@@ -168,17 +244,10 @@
   .searchBar {
     flex-basis: 100%;
     max-width: none;
-    flex-wrap: wrap;
   }
 
   .searchActions {
-    justify-content: stretch;
-    flex: 1;
-
-    button {
-      flex: 1;
-      width: auto;
-    }
+    flex: none;
   }
 }
 
@@ -191,11 +260,13 @@
 /* ---------- 无障碍 ---------- */
 
 @media (prefers-reduced-motion: reduce) {
-  .searchButton {
+  .searchButton,
+  .editorWrapper {
     transition: none;
   }
 
-  .searchButton:active:not(:disabled) {
+  .searchButton:active:not(:disabled),
+  .searchActions button:global(.btn):active:not(:disabled) {
     transform: none;
   }
 }

@@ -44,20 +44,16 @@ export interface ModelMappingDiagramProps {
   className?: string;
 }
 
-const PROVIDER_COLORS = [
-  '#8b8680',
-  '#10b981',
-  '#f59e0b',
-  '#c65746',
-  '#8b5cf6',
-  '#ec4899',
-  '#06b6d4',
-  '#84cc16',
-];
+// Branch colors: the three provider accent tokens; every other provider stays neutral.
+const PROVIDER_ACCENTS: Record<string, string> = {
+  claude: 'var(--accent-claude)',
+  codex: 'var(--accent-codex)',
+  xai: 'var(--accent-grok)',
+  grok: 'var(--accent-grok)',
+};
 
 function getProviderColor(provider: string): string {
-  const hash = provider.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
-  return PROVIDER_COLORS[hash % PROVIDER_COLORS.length];
+  return PROVIDER_ACCENTS[provider.trim().toLowerCase()] ?? 'var(--text-secondary)';
 }
 
 export interface ModelMappingDiagramRef {
@@ -568,7 +564,7 @@ export const ModelMappingDiagram = forwardRef<ModelMappingDiagramRef, ModelMappi
               <path
                 key={line.id}
                 d={line.path}
-                stroke={line.color}
+                style={{ stroke: line.color }}
                 strokeOpacity={isDark ? 0.4 : 0.3}
               />
             ))}

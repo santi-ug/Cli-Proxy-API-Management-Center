@@ -1,6 +1,7 @@
-@use 'sass:color';
 @use './variables.scss' as *;
 
+// Buttons follow the Account pools page: primary is a filled pill in the action color
+// (white on the dark theme), secondary and ghost read as text links, danger is a red link.
 .btn {
   display: inline-flex;
   align-items: center;
@@ -8,53 +9,57 @@
   gap: $spacing-sm;
   border: 1px solid transparent;
   border-radius: $radius-md;
-  padding: 10px 14px;
-  font-weight: 600;
+  padding: 9px 14px;
+  font-weight: 500;
+  line-height: 1.25;
   cursor: pointer;
-  transition: all $transition-fast;
-  background-color: var(--bg-secondary);
+  transition:
+    background-color $transition-fast,
+    border-color $transition-fast,
+    color $transition-fast,
+    opacity $transition-fast,
+    transform 0.1s;
+  background-color: transparent;
   color: var(--text-primary);
+
+  &:focus-visible {
+    outline: 2px solid var(--text-primary);
+    outline-offset: 2px;
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.97);
+  }
 
   &.btn-primary {
     background-color: var(--primary-color);
     color: var(--primary-contrast, #fff);
     border-color: var(--primary-color);
 
-    &:hover {
+    &:hover:not(:disabled) {
       background-color: var(--primary-hover);
       border-color: var(--primary-hover);
     }
   }
 
-  &.btn-secondary {
-    background-color: var(--bg-tertiary);
-    border-color: var(--border-color);
-    color: var(--text-primary);
-
-    &:hover {
-      background-color: var(--bg-hover, var(--bg-tertiary));
-      border-color: var(--border-hover);
-    }
-  }
-
+  &.btn-secondary,
   &.btn-ghost {
     background: transparent;
     border-color: transparent;
     color: var(--text-secondary);
 
-    &:hover {
+    &:hover:not(:disabled) {
       color: var(--text-primary);
-      background: var(--bg-tertiary);
     }
   }
 
   &.btn-danger {
-    background-color: $error-color;
-    border-color: $error-color;
-    color: #fff;
+    background: transparent;
+    border-color: transparent;
+    color: var(--error-color);
 
-    &:hover {
-      background-color: color.adjust($error-color, $lightness: -5%);
+    &:hover:not(:disabled) {
+      color: color-mix(in srgb, var(--error-color) 80%, var(--text-primary));
     }
   }
 
@@ -63,24 +68,21 @@
   }
 
   &.btn-sm {
-    padding: 8px 10px;
-    font-size: 14px;
+    padding: 7px 10px;
+    font-size: 13px;
   }
 
   &:disabled {
-    opacity: 0.6;
+    opacity: 0.45;
     cursor: not-allowed;
   }
-}
 
-[data-theme='dark'] {
-  .btn {
-    color: #fff;
-  }
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
 
-  .btn.btn-secondary,
-  .btn.btn-ghost {
-    color: #fff;
+    &:active:not(:disabled) {
+      transform: none;
+    }
   }
 }
 
@@ -96,10 +98,18 @@ textarea {
     border-color $transition-fast,
     box-shadow $transition-fast;
 
+  &::placeholder {
+    color: var(--text-tertiary);
+  }
+
+  &:hover:not(:disabled):not(:focus) {
+    border-color: var(--border-hover);
+  }
+
   &:focus {
     outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba($primary-color, 0.18);
+    border-color: var(--text-secondary);
+    box-shadow: none;
   }
 }
 
@@ -124,7 +134,7 @@ textarea {
   background-color: var(--bg-primary);
   border: 1px solid var(--border-color);
   border-radius: $radius-lg;
-  box-shadow: var(--shadow);
+  box-shadow: none;
   padding: $spacing-lg;
 }
 
@@ -143,8 +153,8 @@ textarea {
   .title {
     flex: 1 1 auto;
     min-width: 0;
-    font-size: 18px;
-    font-weight: 700;
+    font-size: 15px;
+    font-weight: 600;
     color: var(--text-primary);
   }
 }
@@ -153,9 +163,9 @@ textarea {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 10px;
-  border-radius: $radius-full;
-  font-size: 13px;
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-size: 12px;
   border: 1px solid var(--border-color);
   margin-bottom: $spacing-md;
 
@@ -165,21 +175,21 @@ textarea {
   }
 
   &.success {
-    color: $success-color;
-    border-color: rgba($success-color, 0.35);
-    background: rgba($success-color, 0.08);
+    color: var(--success-badge-text);
+    border-color: var(--success-badge-border);
+    background: var(--success-badge-bg);
   }
 
   &.warning {
-    color: $warning-color;
-    border-color: rgba($warning-color, 0.35);
-    background: rgba($warning-color, 0.08);
+    color: var(--warning-color);
+    border-color: color-mix(in srgb, var(--warning-color) 35%, transparent);
+    background: color-mix(in srgb, var(--warning-color) 8%, transparent);
   }
 
   &.error {
-    color: $error-color;
-    border-color: rgba($error-color, 0.35);
-    background: rgba($error-color, 0.08);
+    color: var(--error-color);
+    border-color: color-mix(in srgb, var(--error-color) 35%, transparent);
+    background: color-mix(in srgb, var(--error-color) 8%, transparent);
   }
 
   &.muted {
@@ -188,9 +198,9 @@ textarea {
 }
 
 .pill {
-  padding: 4px 10px;
-  border-radius: $radius-full;
-  background: var(--bg-secondary);
+  padding: 3px 9px;
+  border-radius: 6px;
+  background: transparent;
   color: var(--text-secondary);
   border: 1px solid var(--border-color);
   font-size: 12px;
@@ -225,7 +235,7 @@ textarea {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.35);
+  background: rgb(0 0 0 / 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -263,7 +273,7 @@ textarea {
   background: var(--bg-primary);
   border-radius: $radius-lg;
   border: 1px solid var(--border-color);
-  box-shadow: $shadow-lg;
+  box-shadow: var(--shadow-lg);
   max-width: 100%;
   max-height: 90vh;
   overflow: hidden;
@@ -304,18 +314,27 @@ textarea {
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .modal-overlay.modal-overlay-entering,
+  .modal-overlay.modal-overlay-closing,
+  .modal.modal-entering,
+  .modal.modal-closing {
+    animation: none;
+  }
+}
+
 .modal-close-floating {
   position: absolute;
   top: 12px;
   right: 12px;
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   padding: 0;
-  background: var(--bg-secondary);
+  background: transparent;
   border: 1px solid var(--border-color);
-  color: var(--text-secondary);
+  color: var(--text-primary);
   cursor: pointer;
-  border-radius: $radius-full;
+  border-radius: $radius-md;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -332,11 +351,15 @@ textarea {
   &:hover {
     color: var(--text-primary);
     background: var(--bg-tertiary);
-    transform: scale(1.1);
   }
 
   &:active {
     transform: scale(0.95);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--text-primary);
+    outline-offset: 2px;
   }
 
   &:disabled {
@@ -346,8 +369,8 @@ textarea {
   }
 
   &:disabled:hover {
-    color: var(--text-secondary);
-    background: var(--bg-secondary);
+    color: var(--text-primary);
+    background: transparent;
     transform: none;
   }
 }
@@ -359,8 +382,8 @@ textarea {
   border-bottom: 1px solid var(--border-color);
 
   .modal-title {
-    font-weight: 700;
-    font-size: 18px;
+    font-weight: 600;
+    font-size: 16px;
     color: var(--text-primary);
   }
 }
@@ -378,6 +401,16 @@ textarea {
   justify-content: flex-end;
   gap: $spacing-sm;
   background: var(--bg-primary);
+
+  // A destructive confirm keeps a quiet red outline so it reads as the decision.
+  .btn-danger {
+    border-color: color-mix(in srgb, var(--error-color) 40%, transparent);
+    background: color-mix(in srgb, var(--error-color) 8%, transparent);
+
+    &:hover:not(:disabled) {
+      background: color-mix(in srgb, var(--error-color) 14%, transparent);
+    }
+  }
 }
 
 @media (max-width: $breakpoint-mobile) {
@@ -435,10 +468,10 @@ textarea {
 }
 
 .empty-state {
-  border: 1px dashed var(--border-color);
+  border: 1px solid var(--border-color);
   border-radius: $radius-lg;
   padding: $spacing-lg;
-  background: var(--bg-secondary);
+  background: transparent;
   display: flex;
   justify-content: space-between;
   gap: $spacing-md;
@@ -454,8 +487,8 @@ textarea {
     width: 42px;
     height: 42px;
     flex: 0 0 42px;
-    border-radius: $radius-full;
-    border: 2px solid var(--border-color);
+    border-radius: $radius-md;
+    border: 1px solid var(--border-color);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -471,12 +504,15 @@ textarea {
   }
 
   .empty-title {
-    font-weight: 700;
+    font-size: 15px;
+    font-weight: 600;
     color: var(--text-primary);
   }
 
   .empty-desc {
     color: var(--text-secondary);
+    font-size: 13px;
+    line-height: 1.5;
     margin-top: 4px;
   }
 
@@ -518,7 +554,7 @@ textarea {
   }
 
   .item-title {
-    font-weight: 700;
+    font-weight: 600;
     color: var(--text-primary);
   }
 
@@ -537,11 +573,11 @@ textarea {
 }
 
 .error-box {
-  background: rgba($error-color, 0.1);
-  border: 1px solid rgba($error-color, 0.4);
+  background: var(--bg-error-light);
+  border: 1px solid color-mix(in srgb, var(--error-color) 36%, transparent);
   border-radius: $radius-md;
   padding: $spacing-sm $spacing-md;
-  color: $error-color;
+  color: var(--error-color);
 }
 
 .stack {

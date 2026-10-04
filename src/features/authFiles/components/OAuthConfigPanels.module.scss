@@ -1,8 +1,8 @@
 @use '../../../styles/mixins' as *;
 
 /* ============================================================
- * OAuth 配置双卡（排除模型 / 模型别名）共用外衣：panel 配方
- * （16px 圆角 / 1px 边框 / 82% 透感纸面），列表行走 mono 遥测。
+ * Shared shell for the two OAuth config cards (model disablement, model aliases):
+ * the pools card recipe (10px radius, 1px border, flat raised surface).
  * ============================================================ */
 
 .panel {
@@ -10,9 +10,9 @@
   flex-direction: column;
   gap: 14px;
   padding: clamp(16px, 2vw, 20px);
-  border-radius: 16px;
+  border-radius: $radius-lg;
   border: 1px solid var(--border-color);
-  background: color-mix(in srgb, var(--bg-primary) 82%, transparent);
+  background: var(--bg-primary);
 }
 
 .panelHead {
@@ -26,7 +26,7 @@
 .panelTitle {
   margin: 0;
   font-size: 15px;
-  font-weight: 650;
+  font-weight: 600;
   letter-spacing: -0.01em;
   color: var(--text-primary);
 }
@@ -50,11 +50,27 @@
 .viewModeSwitch {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  padding: 2px;
-  border-radius: $radius-md;
-  border: 1px solid var(--border-color);
-  background: var(--bg-secondary);
+  gap: 4px;
+
+  /* List / diagram: pools chips (extra .btn-sm keeps these above the shared variant rules). */
+  > :global(.btn.btn-sm) {
+    padding: 7px 12px;
+    border: 0;
+    border-radius: 7px;
+    background: none;
+    color: var(--text-secondary);
+    font-weight: 400;
+  }
+
+  > :global(.btn.btn-sm:hover:not(:disabled):not([aria-pressed='true'])) {
+    color: var(--text-primary);
+  }
+
+  > :global(.btn.btn-sm[aria-pressed='true']),
+  > :global(.btn.btn-sm[aria-pressed='true']:hover:not(:disabled)) {
+    background: var(--primary-color);
+    color: var(--primary-contrast);
+  }
 }
 
 /* ---------- provider 行 ---------- */
@@ -71,9 +87,9 @@
   justify-content: space-between;
   gap: 10px;
   padding: 9px 12px;
-  border-radius: 10px;
-  border: 1px solid color-mix(in srgb, var(--border-color) 70%, transparent);
-  background: color-mix(in srgb, var(--bg-secondary) 45%, transparent);
+  border-radius: $radius-md;
+  border: 1px solid var(--border-color);
+  background: transparent;
   transition:
     background-color $transition-fast,
     border-color $transition-fast;
@@ -82,7 +98,7 @@
 @media (hover: hover) and (pointer: fine) {
   .item:hover {
     border-color: var(--border-hover);
-    background: color-mix(in srgb, var(--bg-secondary) 80%, transparent);
+    background: var(--bg-tertiary);
   }
 }
 
@@ -96,7 +112,7 @@
 .itemProvider {
   font-family: $font-mono;
   font-size: 12.5px;
-  font-weight: 650;
+  font-weight: 500;
   color: var(--text-primary);
   @include text-ellipsis;
 }
@@ -131,12 +147,11 @@
 
 .aliasChartTitle {
   margin: 0;
-  font-family: $font-mono;
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: var(--text-tertiary);
+  color: var(--text-secondary);
 }
 
 .aliasChart {

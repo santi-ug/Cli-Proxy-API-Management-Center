@@ -32,6 +32,11 @@
   transition: background $transition-fast;
 }
 
+.root input:focus-visible + .track {
+  outline: 2px solid var(--text-primary);
+  outline-offset: 2px;
+}
+
 .thumb {
   position: absolute;
   top: 3px;
@@ -48,11 +53,40 @@
   background: var(--primary-color);
 }
 
+// Dark: the "on" track is white, so the thumb flips to the contrast color to stay visible.
+:global([data-theme='dark']) {
+  .track {
+    background: var(--bg-hover);
+    box-shadow: inset 0 0 0 1px var(--border-hover);
+  }
+
+  .thumb {
+    background: var(--text-secondary);
+    box-shadow: none;
+  }
+
+  .root input:checked + .track {
+    background: var(--primary-color);
+    box-shadow: none;
+  }
+
+  .root input:checked + .track .thumb {
+    background: var(--primary-contrast);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .track,
+  .thumb {
+    transition: none;
+  }
+}
+
 .root input:checked + .track .thumb {
   transform: translateX(20px);
 }
 
 .label {
   color: var(--text-primary);
-  font-weight: 600;
+  font-weight: 500;
 }

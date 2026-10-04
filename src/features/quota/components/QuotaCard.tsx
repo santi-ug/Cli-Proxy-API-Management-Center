@@ -90,6 +90,7 @@ export function QuotaCard(props: QuotaCardProps) {
     <article
       className={`${styles.card} ${mountEntranceDelayMs === null ? '' : styles.cardEnter}`}
       style={entranceStyle}
+      data-provider={entry.type}
     >
       <header className={styles.head}>
         <span

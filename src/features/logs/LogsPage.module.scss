@@ -13,8 +13,9 @@
 .pageHeader {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   flex-wrap: wrap;
-  gap: 12px 24px;
+  gap: 10px 16px;
   flex: none;
 }
 
@@ -22,40 +23,52 @@
   margin: 0;
   color: var(--text-primary);
   font-size: 28px;
-  line-height: 1.3;
-  font-weight: 700;
-  letter-spacing: -0.025em;
+  line-height: 1.15;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
+/* Log Content / Error Request Logs: account pools filter chips */
 .tabBar {
   display: inline-flex;
+  flex-wrap: wrap;
   gap: 4px;
-  padding: 3px;
-  border-radius: 10px;
-  background: var(--bg-tertiary);
 }
 
 .tabItem {
   @include button-reset;
-  padding: 8px 14px;
+  padding: 7px 12px;
   border-radius: 7px;
   color: var(--text-secondary);
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 400;
   cursor: pointer;
+  transition:
+    background-color 0.15s,
+    color 0.15s;
 }
 
 .tabActive {
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  box-shadow: 0 1px 3px var(--border-color);
+  background: var(--primary-color);
+  color: var(--primary-contrast);
 }
 
 .container button:focus-visible,
-.structuredFilters button:focus-visible,
+.structuredFilters button:focus-visible {
+  outline: 2px solid var(--text-primary);
+  outline-offset: 2px;
+}
+
 .logPanel:focus-visible {
-  outline: 2px solid var(--primary-color);
+  outline: 2px solid var(--text-primary);
   outline-offset: -2px;
+}
+
+/* button-reset adds a :focus ring; keep it for keyboard focus only. */
+.tabItem:focus:not(:focus-visible),
+.filterChip:focus:not(:focus-visible),
+.searchClear:focus:not(:focus-visible) {
+  outline: none;
 }
 
 .content,
@@ -78,7 +91,7 @@
   overflow: hidden;
   padding: 0;
   border: 1px solid var(--border-color);
-  border-radius: 12px;
+  border-radius: $radius-lg;
   background: var(--bg-primary);
   box-shadow: none;
 }
@@ -123,20 +136,34 @@
   min-height: var(--log-control-height);
   border-radius: 8px;
   border: 1px solid var(--border-color);
-  background: var(--bg-primary);
+  background: transparent;
+  color: var(--text-primary);
   font-size: 13px;
   font-weight: 500;
   line-height: 1;
   box-shadow: none;
 }
 
+/* Fields sit on the card, so they take the page color; buttons stay transparent. */
+.searchInput:global(.input),
+.levelSelect > button {
+  background: var(--bg-secondary);
+}
+
 .searchInput:global(.input) {
   padding: 0 38px 0 12px;
+  font-weight: 400;
 }
 
 .levelSelect > button,
 .filterPanelToggle:global(.btn) {
   padding: 0 12px;
+}
+
+.filterPanelToggle:global(.btn):hover:not(:disabled),
+.actionButton:global(.btn):hover:not(:disabled) {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
 }
 
 .levelSelect {
@@ -153,8 +180,14 @@
   place-items: center;
   width: 28px;
   height: 28px;
+  border-radius: 6px;
   color: var(--text-secondary);
   cursor: pointer;
+  transition: color 0.15s;
+
+  &:hover {
+    color: var(--text-primary);
+  }
 }
 
 .filterPanelHeader {
@@ -177,10 +210,11 @@
 
 .filterPanelCount {
   padding: 1px 6px;
-  border-radius: 5px;
-  background: var(--bg-tertiary);
-  color: var(--primary-color);
+  border-radius: 6px;
+  background: var(--count-badge-bg);
+  color: var(--count-badge-text);
   font-size: 11px;
+  font-variant-numeric: tabular-nums;
 }
 
 .toolbar {
@@ -199,22 +233,38 @@
   > span {
     display: flex;
   }
+  &:active:not(:disabled) {
+    transform: scale(0.95);
+  }
   &[aria-pressed='true'] {
-    color: var(--primary-color);
-    border-color: var(--primary-color);
-    background: color-mix(in srgb, var(--primary-color) 10%, var(--bg-primary));
+    color: var(--text-primary);
+    border-color: var(--text-secondary);
+    background: var(--bg-tertiary);
   }
 }
 
 .container :global(.btn) {
   transition:
     background-color 120ms ease,
-    border-color 120ms ease;
+    border-color 120ms ease,
+    color 120ms ease,
+    transform 0.1s;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .container :global(.btn) {
+  .container :global(.btn),
+  .tabItem,
+  .filterChip,
+  .searchClear {
     transition: none;
+  }
+
+  .actionButton:global(.btn):active:not(:disabled) {
+    transform: none;
+  }
+
+  .followButton:global(.btn):active:not(:disabled) {
+    transform: translateX(-50%);
   }
 }
 
@@ -239,7 +289,9 @@
 }
 .filterChipLabel {
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
   color: var(--text-secondary);
 }
 .filterChipList {
@@ -253,24 +305,25 @@
 }
 .filterChip {
   @include button-reset;
-  padding: 6px 10px;
-  border-radius: 6px;
-  border: 1px solid var(--border-color);
-  background: var(--bg-primary);
+  padding: 7px 12px;
+  border-radius: 7px;
+  background: none;
   color: var(--text-secondary);
-  font-size: 12px;
+  font-size: 13px;
   cursor: pointer;
   max-width: 100%;
   overflow-wrap: anywhere;
+  transition:
+    background-color 0.15s,
+    color 0.15s;
   &:disabled {
     opacity: 0.45;
     cursor: not-allowed;
   }
 }
 .filterChipActive {
-  color: var(--primary-color);
-  border-color: var(--primary-color);
-  background: color-mix(in srgb, var(--primary-color) 8%, var(--bg-primary));
+  color: var(--primary-contrast);
+  background: var(--primary-color);
 }
 
 .viewerArea {
@@ -278,6 +331,13 @@
   overflow: hidden;
   > :global(.hint) {
     padding: 24px;
+  }
+  /* Empty, search-miss and "file logging required" states: quiet, unboxed, like pools .empty */
+  > :global(.empty-state) {
+    justify-content: flex-start;
+    padding: 40px 24px;
+    border: 0;
+    border-radius: 0;
   }
 }
 
@@ -299,13 +359,13 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px 20px;
-  padding: 7px 12px;
+  padding: 8px 12px;
   border-top: 1px solid var(--border-color);
   color: var(--text-secondary);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.5;
   font-variant-numeric: tabular-nums;
-  background: var(--bg-secondary);
+  background: transparent;
 }
 .readStatus {
   display: flex;
@@ -341,8 +401,24 @@
   left: 50%;
   transform: translateX(-50%);
   z-index: 2;
-  box-shadow: 0 2px 12px var(--border-color);
   white-space: nowrap;
+}
+
+/* Floats over log text, so it needs a solid surface rather than the text-link secondary look. */
+.followButton:global(.btn) {
+  border-color: var(--border-color);
+  background: var(--floating-surface, var(--bg-primary));
+  color: var(--text-primary);
+  box-shadow: var(--floating-shadow);
+
+  &:hover:not(:disabled) {
+    border-color: var(--border-hover);
+    background: var(--bg-tertiary);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateX(-50%) scale(0.97);
+  }
 }
 
 .loadMoreBanner {
@@ -445,10 +521,14 @@
   font-size: 11px;
   line-height: 20px;
 }
+/* Quiet bordered badges: neutral by default, warning and danger tint only for WARN/ERROR. */
 .badge {
   padding: 0 5px;
-  border-radius: 4px;
-  font-weight: 600;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  line-height: 18px;
+  font-weight: 500;
+  color: var(--text-secondary);
 }
 .pill {
   color: var(--text-secondary);
@@ -460,34 +540,43 @@
 }
 .requestIdBadge {
   font-family: inherit;
-  color: var(--primary-color);
+  color: var(--text-primary);
   background: transparent;
-  border: 1px solid var(--border-color);
   cursor: pointer;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s;
+  &:hover {
+    border-color: var(--border-hover);
+    background: var(--bg-tertiary);
+  }
 }
 .statusSuccess {
   color: var(--success-badge-text);
+  border-color: var(--success-badge-border);
   background: var(--success-badge-bg);
 }
 .statusInfo,
 .levelInfo {
-  color: var(--info-color);
-  background: color-mix(in srgb, var(--info-color) 8%, transparent);
+  color: var(--text-secondary);
+  background: transparent;
 }
 .statusWarn,
 .levelWarn {
   color: var(--warning-text);
+  border-color: var(--warning-border);
   background: var(--warning-bg);
 }
 .statusError,
 .levelError {
   color: var(--failure-badge-text);
+  border-color: var(--failure-badge-border);
   background: var(--failure-badge-bg);
 }
 .levelDebug,
 .levelTrace {
-  color: var(--text-secondary);
-  background: var(--bg-secondary);
+  color: var(--text-tertiary);
+  background: transparent;
 }
 .statusBadge {
   font-variant-numeric: tabular-nums;
@@ -588,7 +677,7 @@
 
 @media (hover: hover) and (pointer: fine) {
   .logRow:hover {
-    background: color-mix(in srgb, var(--primary-color) 5%, var(--bg-primary));
+    background: var(--bg-tertiary);
   }
   .copyButton {
     opacity: 0;
@@ -597,11 +686,14 @@
   .logRow:focus-within .copyButton {
     opacity: 1;
   }
-  .tabItem:hover {
+  .logRow:hover .copyButton:global(.btn) {
+    background: var(--bg-tertiary);
+  }
+  .tabItem:not(.tabActive):hover {
     color: var(--text-primary);
   }
-  .filterChip:hover:not(:disabled) {
-    border-color: var(--primary-color);
+  .filterChip:not(.filterChipActive):hover:not(:disabled) {
+    color: var(--text-primary);
   }
 }
 
@@ -623,11 +715,10 @@
     gap: 8px 12px;
   }
   .pageTitle {
-    font-size: 18px;
+    font-size: 22px;
   }
   .tabItem {
-    padding: 6px 8px;
-    font-size: 12px;
+    padding: 6px 10px;
   }
   .filters {
     padding: 12px;
@@ -652,7 +743,7 @@
     gap: 4px;
     padding: 6px 8px;
     flex-wrap: wrap;
-    font-size: 10px;
+    font-size: 11px;
   }
   .readStatus {
     flex-wrap: wrap;

@@ -19,14 +19,13 @@ $quota-font-size: 11.5px;
   gap: 9px;
   padding: 10px 11px;
   font-size: $quota-font-size;
-  border-radius: 10px;
-  border: 1px solid color-mix(in srgb, var(--border-color) 70%, transparent);
-  background: color-mix(in srgb, var(--bg-secondary) 55%, transparent);
+  border-radius: $radius-md;
+  border: 1px solid var(--border-color);
+  background: transparent;
 }
 
 .quotaMessage {
-  font-family: $font-mono;
-  font-size: $quota-font-size;
+  font-size: 12px;
   font-weight: 400;
   line-height: 1.5;
   color: var(--text-tertiary);
@@ -39,15 +38,21 @@ button.quotaMessageAction {
   border: 0;
   background: none;
   color: var(--text-secondary);
+  border-radius: 6px;
   transition: color $transition-fast;
 
   &:hover:not(:disabled) {
-    color: var(--primary-hover);
+    color: var(--text-primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--text-primary);
+    outline-offset: 2px;
   }
 
   &:disabled {
     cursor: not-allowed;
-    color: var(--text-quaternary);
+    color: var(--text-tertiary);
   }
 }
 
@@ -148,15 +153,15 @@ button.quotaMessageAction {
 /* ---------- 进度条（QuotaProgressBar 注入，Meter 风 6px 轨道） ---------- */
 
 .quotaBar {
-  height: 6px;
-  border-radius: $radius-full;
-  background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+  height: 4px;
+  border-radius: 2px;
+  background: var(--bg-hover);
   overflow: hidden;
 }
 
 .quotaBarFill {
   height: 100%;
-  border-radius: $radius-full;
+  border-radius: 2px;
   transition: width 360ms var(--ease-out-strong, ease);
 }
 
@@ -165,7 +170,7 @@ button.quotaMessageAction {
 }
 
 .quotaBarFillMedium {
-  background: var(--quota-medium-color);
+  background: var(--warning-color);
 }
 
 .quotaBarFillLow {
@@ -184,10 +189,10 @@ button.quotaMessageAction {
   display: inline-flex;
   align-items: baseline;
   gap: 5px;
-  padding: 3px 8px;
-  border-radius: $radius-full;
+  padding: 1px 7px;
+  border-radius: 6px;
   border: 1px solid var(--border-color);
-  background: color-mix(in srgb, var(--bg-primary) 70%, transparent);
+  background: transparent;
 }
 
 .codexPlanLabel {
@@ -241,7 +246,7 @@ button.quotaMessageAction {
   & + & {
     margin-top: 3px;
     padding-top: 8px;
-    border-top: 1px dashed color-mix(in srgb, var(--border-color) 80%, transparent);
+    border-top: 1px solid var(--border-color);
   }
 }
 
@@ -253,12 +258,11 @@ button.quotaMessageAction {
 }
 
 .antigravityQuotaGroupTitle {
-  font-family: $font-mono;
   font-size: $quota-font-size;
-  font-weight: 600;
-  letter-spacing: 0.1em;
+  font-weight: 500;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: var(--text-tertiary);
+  color: var(--text-secondary);
 }
 
 .antigravityQuotaGroupDescription {
@@ -274,17 +278,16 @@ button.quotaMessageAction {
   flex-direction: column;
   gap: 4px;
   padding: 8px 9px;
-  border-radius: 8px;
-  border: 1px solid color-mix(in srgb, var(--border-color) 70%, transparent);
+  border-radius: $radius-md;
+  border: 1px solid var(--border-color);
 }
 
 .codexResetCreditsTitle {
-  font-family: $font-mono;
   font-size: $quota-font-size;
-  font-weight: 600;
-  letter-spacing: 0.1em;
+  font-weight: 500;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: var(--text-tertiary);
+  color: var(--text-secondary);
 }
 
 .codexResetCreditRow {

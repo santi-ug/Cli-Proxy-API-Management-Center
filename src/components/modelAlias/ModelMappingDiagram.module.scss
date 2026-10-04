@@ -74,8 +74,9 @@
 }
 
 .columnHeader {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.07em;
   color: var(--text-secondary);
   text-transform: uppercase;
   margin-bottom: 8px;
@@ -95,26 +96,28 @@
   width: 100%;
   max-width: 280px;
   position: relative;
-  transition: all 0.2s ease;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
 
   &:hover {
-    border-color: var(--primary-color);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    border-color: var(--border-hover);
     z-index: 10;
   }
 
   &.dropTarget {
-    background-color: var(--bg-secondary);
-    border-color: var(--primary-color);
+    background-color: var(--bg-tertiary);
+    border-color: var(--text-secondary);
     border-width: 2px;
   }
 
   &.selected {
-    border-color: var(--primary-color);
-    background-color: var(--bg-secondary);
-    box-shadow: 0 0 0 2px rgba($primary-color, 0.18);
+    border-color: var(--text-secondary);
+    background-color: var(--bg-tertiary);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
   }
 }
 
@@ -143,8 +146,8 @@
     align-items: center;
     justify-content: center;
     border: none;
-    background: var(--bg-secondary);
-    border-radius: 4px;
+    background: var(--bg-tertiary);
+    border-radius: 6px;
     cursor: pointer;
     color: var(--text-secondary);
     transition:
@@ -152,8 +155,13 @@
       color 0.15s;
 
     &:hover {
-      background: var(--border-color);
+      background: var(--bg-hover);
       color: var(--text-primary);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--text-primary);
+      outline-offset: 2px;
     }
   }
 
@@ -218,9 +226,10 @@
 
 .providerBadge {
   font-size: 11px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: var(--bg-secondary);
+  padding: 1px 6px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: transparent;
   color: var(--text-secondary);
   margin-right: 8px;
   font-weight: 500;
@@ -235,19 +244,19 @@
 
 .itemCount {
   font-size: 11px;
-  color: var(--text-tertiary);
+  color: var(--count-badge-text);
   margin-left: 8px;
-  background: var(--bg-secondary);
+  background: var(--count-badge-bg);
   padding: 1px 6px;
-  border-radius: 10px;
+  border-radius: 6px;
 }
 
 .contextMenu {
   position: fixed;
-  background: var(--bg-primary);
+  background: var(--floating-surface, var(--bg-primary));
   border: 1px solid var(--border-color);
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: $radius-md;
+  box-shadow: var(--floating-shadow);
   z-index: 9999;
   min-width: 120px;
   overflow: hidden;
@@ -264,14 +273,14 @@
     gap: 8px;
 
     &:hover {
-      background-color: var(--bg-secondary);
+      background-color: var(--bg-tertiary);
     }
 
     &.danger {
       color: var(--error-color);
 
       &:hover {
-        background-color: var(--bg-error-light);
+        background-color: var(--bg-tertiary);
       }
     }
   }
@@ -356,6 +365,11 @@
   cursor: pointer;
 
   &:hover {
-    background: var(--bg-error-light);
+    background: var(--bg-tertiary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--text-primary);
+    outline-offset: 2px;
   }
 }

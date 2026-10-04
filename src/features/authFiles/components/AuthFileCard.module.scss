@@ -1,8 +1,8 @@
 @use '../../../styles/mixins' as *;
 
 /* ============================================================
- * 凭证卡片 — statTile 配方（14px 圆角 / 1px 边框 / 82% 透感纸面）
- * 身份优先；停用时弱化内容，操作区保持清晰以便重新启用。
+ * Credential card: the pools card recipe (10px radius, 1px border, flat raised surface).
+ * Identity first; disabled cards dim their content but keep the actions clear for re-enabling.
  * ============================================================ */
 
 .card {
@@ -11,9 +11,9 @@
   flex-direction: column;
   gap: 12px;
   padding: 16px;
-  border-radius: 14px;
+  border-radius: $radius-lg;
   border: 1px solid var(--border-color);
-  background: color-mix(in srgb, var(--bg-primary) 82%, transparent);
+  background: var(--bg-primary);
   transition: border-color 160ms var(--ease-out-strong, ease-out);
 }
 
@@ -36,9 +36,9 @@
   padding: 13px 14px;
 }
 
-.cardSelected {
-  border-color: color-mix(in srgb, var(--primary-color) 55%, transparent);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary-color) 40%, transparent);
+.cardSelected,
+.cardSelected:hover {
+  border-color: var(--text-secondary);
 }
 
 /* 首次数据到达时的一次性级联入场；过滤/翻页/轮询不重播 */
@@ -74,7 +74,7 @@
   gap: 4px 8px;
   min-width: 0;
   margin: 0;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   line-height: 1.6;
 }
@@ -83,11 +83,12 @@
 .providerBadge {
   flex-shrink: 0;
   max-width: 100%;
-  padding: 4px 10px;
-  border-radius: 12px;
+  padding: 1px 7px;
+  border: 1px solid color-mix(in srgb, currentColor 28%, transparent);
+  border-radius: 6px;
   font-size: 12px;
-  font-weight: 600;
-  line-height: 1.3;
+  font-weight: 500;
+  line-height: 1.5;
   overflow-wrap: anywhere;
 }
 
@@ -175,30 +176,27 @@
 }
 
 .healthLabel {
-  font-family: $font-mono;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: var(--text-tertiary);
+  color: var(--text-secondary);
 }
 
 .healthCounts {
   display: inline-flex;
   align-items: baseline;
   gap: 8px;
-  font-family: $font-mono;
-  font-size: 11.5px;
-  font-weight: 600;
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
 }
 
 .countOk {
-  color: var(--text-quaternary);
+  color: var(--text-tertiary);
 }
 
 .countFail {
-  color: var(--text-quaternary);
+  color: var(--text-tertiary);
 }
 
 /* 绿色只给活的流量：有计数才点亮 */
@@ -237,7 +235,7 @@
 }
 
 .statusBlockIdle {
-  background: color-mix(in srgb, var(--text-quaternary) 26%, transparent);
+  background: var(--border-color);
 }
 
 .statusBlockActive .statusBlock {
@@ -246,11 +244,10 @@
 }
 
 .statusRate {
-  font-family: $font-mono;
-  font-size: 11.5px;
-  font-weight: 650;
+  font-size: 12px;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
-  color: var(--text-quaternary);
+  color: var(--text-tertiary);
   min-width: 40px;
   text-align: right;
 }
@@ -330,14 +327,13 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 4px 7px;
-  font-family: $font-mono;
-  font-size: 11.5px;
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
   color: var(--text-tertiary);
 }
 
 .metaDivider {
-  color: var(--text-quaternary);
+  color: var(--text-tertiary);
   user-select: none;
 }
 
@@ -346,31 +342,20 @@
   display: inline-flex;
   align-items: baseline;
   gap: 4px;
-  padding: 2px 6px;
-  border: 1px solid transparent;
-  border-radius: $radius-full;
-  font-weight: 650;
-  line-height: 1.35;
+  padding: 1px 6px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-weight: 500;
+  line-height: 1.4;
   white-space: nowrap;
 }
 
-.metaPriority {
-  color: var(--text-secondary);
-  background: color-mix(in srgb, var(--text-quaternary) 10%, transparent);
-  border-color: color-mix(in srgb, var(--text-quaternary) 24%, transparent);
-}
-
-.metaWeight {
-  color: var(--primary-active);
-  background: var(--primary-10);
-  border-color: var(--primary-30);
-}
-
 .metaMetricLabel {
-  font-size: 10px;
-  font-weight: 600;
-  color: currentColor;
-  opacity: 0.78;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-tertiary);
 }
 
 /* ---------- 页脚动作区 ---------- */
@@ -383,7 +368,7 @@
   justify-content: space-between;
   gap: 10px;
   padding-top: 12px;
-  border-top: 1px solid color-mix(in srgb, var(--border-color) 70%, transparent);
+  border-top: 1px solid var(--border-color);
 }
 
 .actionsMain {
@@ -414,7 +399,7 @@
   flex-shrink: 0;
 }
 
-/* 图标按钮：方形紧凑的安静描边风——危险动作静默存在，hover 才显色块 */
+/* Icon buttons: the dense 30px bordered icon button; delete keeps a red glyph. */
 .card .actions .iconButton {
   display: inline-flex;
   align-items: center;
@@ -422,31 +407,32 @@
   width: 30px;
   height: 30px;
   padding: 0;
+  border-radius: $radius-md;
   background: transparent;
   border: 1px solid var(--border-color);
-  color: var(--text-secondary);
+  color: var(--text-primary);
 }
 
 .card .actions .iconButton:global(.btn-danger) {
   color: var(--danger-color);
-  border-color: color-mix(in srgb, var(--danger-color) 28%, transparent);
 }
 
 @media (hover: hover) and (pointer: fine) {
   .card .actions .iconButton:hover:not(:disabled) {
     color: var(--text-primary);
-    border-color: var(--border-hover);
     background: var(--bg-tertiary);
   }
 
   .card .actions .iconButton:global(.btn-danger):hover:not(:disabled) {
     color: var(--danger-color);
-    border-color: color-mix(in srgb, var(--danger-color) 45%, transparent);
-    background: var(--destructive-10);
   }
 }
 
-/* 按压反馈：所有可点元素 scale 0.96（reduced-motion 下豁免） */
+.card .actions .iconButton:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+/* Press feedback on every action (skipped under reduced motion). */
 .actions :global(.btn) {
   transition:
     transform var(--dur-press, 160ms) var(--ease-out-strong, ease-out),
@@ -504,7 +490,8 @@
     transition: none;
   }
 
-  .actions :global(.btn:active:not(:disabled)) {
+  .actions :global(.btn:active:not(:disabled)),
+  .card .actions .iconButton:active:not(:disabled) {
     transform: none;
   }
 }

@@ -3,7 +3,7 @@
 
 .root {
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
+  border-radius: $radius-lg;
   background: var(--bg-primary);
   overflow: hidden;
 }
@@ -30,7 +30,7 @@
   }
 
   &:focus-visible {
-    outline: 2px solid var(--primary-color);
+    outline: 2px solid var(--text-primary);
     outline-offset: -2px;
   }
 }

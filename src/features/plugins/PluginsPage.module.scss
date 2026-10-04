@@ -22,14 +22,19 @@
   margin: 0;
   color: var(--text-primary);
   font-size: 28px;
-  font-weight: 700;
-  line-height: 1.2;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+
+  @include mobile {
+    font-size: 22px;
+  }
 }
 
 .description {
   margin: 0;
   color: var(--text-secondary);
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.5;
 }
 
@@ -44,27 +49,24 @@
 }
 
 .errorBox {
-  border: 1px solid var(--danger-color);
-  background: rgba($error-color, 0.1);
-  color: var(--danger-color);
+  border: 1px solid var(--failure-badge-border);
+  background: var(--failure-badge-bg);
+  color: var(--error-color);
 }
 
 .warningBox {
-  border: 1px solid color-mix(in srgb, var(--warning-color, #c65746) 42%, var(--border-color));
-  background: color-mix(in srgb, var(--warning-color, #c65746) 9%, var(--bg-secondary));
+  border: 1px solid var(--warning-border);
+  background: var(--warning-bg);
   color: var(--text-primary);
 }
 
 // ─── Status Bar ─────────────────────────────────────────
 
+// Quiet strip: bordered neutral pills, no container surface.
 .statusBar {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  border-radius: 10px;
-  border: 1px solid color-mix(in srgb, var(--border-color) 60%, transparent);
-  background: color-mix(in srgb, var(--bg-secondary) 60%, transparent);
+  gap: 8px;
   flex-wrap: wrap;
 }
 
@@ -74,12 +76,12 @@
   max-width: 100%;
   align-items: center;
   gap: 6px;
-  padding: 5px 12px;
-  border-radius: $radius-full;
-  border: 1px solid color-mix(in srgb, var(--border-color) 50%, transparent);
-  background: color-mix(in srgb, var(--bg-primary) 56%, transparent);
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: transparent;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 400;
   white-space: nowrap;
 }
 
@@ -91,8 +93,7 @@
 }
 
 .statusDotOn {
-  background: $success-color;
-  box-shadow: 0 0 6px rgba($success-color, 0.5);
+  background: var(--success-color);
 }
 
 .statusDotOff {
@@ -105,7 +106,7 @@
 
 .statusValue {
   color: var(--text-primary);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .statusPathValue {
@@ -117,15 +118,9 @@
   white-space: nowrap;
 }
 
+// The bordered pills already separate themselves.
 .statusDivider {
-  width: 1px;
-  height: 20px;
-  background: color-mix(in srgb, var(--border-color) 60%, transparent);
-  flex-shrink: 0;
-
-  @include mobile {
-    display: none;
-  }
+  display: none;
 }
 
 // ─── Toolbar ────────────────────────────────────────────
@@ -143,6 +138,7 @@
 
   :global(.input) {
     padding-right: 36px;
+    font-size: 13px;
   }
 
   :global(.btn > span) {
@@ -167,10 +163,10 @@
   display: flex;
   flex-direction: column;
   gap: 1px;
-  border: 1px solid color-mix(in srgb, var(--border-color) 70%, transparent);
+  border: 1px solid var(--border-color);
   border-radius: $radius-lg;
   overflow: hidden;
-  background: color-mix(in srgb, var(--border-color) 30%, transparent);
+  background: var(--border-color);
 }
 
 // ─── Plugin Row ─────────────────────────────────────────
@@ -185,7 +181,7 @@
   transition: background-color $transition-fast;
 
   &:hover {
-    background: var(--bg-hover);
+    background: var(--bg-tertiary);
   }
 
   @include mobile {
@@ -203,9 +199,9 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  border-radius: 10px;
-  border: 1px solid color-mix(in srgb, var(--border-color) 50%, transparent);
-  background: color-mix(in srgb, var(--bg-tertiary) 60%, transparent);
+  border-radius: $radius-md;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
   color: var(--text-secondary);
   flex-shrink: 0;
 
@@ -231,8 +227,9 @@
 
 .pluginName {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: $spacing-sm;
+  gap: 4px $spacing-sm;
   min-width: 0;
 
   h2 {
@@ -240,7 +237,7 @@
     margin: 0;
     color: var(--text-primary);
     font-size: 15px;
-    font-weight: 650;
+    font-weight: 600;
     line-height: 1.3;
     @include text-ellipsis;
   }
@@ -307,33 +304,33 @@
   min-height: 22px;
   align-items: center;
   border-radius: 6px;
-  padding: 2px 8px;
-  font-size: 11px;
-  font-weight: 600;
+  padding: 2px 7px;
+  font-size: 12px;
+  font-weight: 500;
   line-height: 1.25;
 }
 
 .badge {
-  background: color-mix(in srgb, var(--bg-secondary) 82%, transparent);
-  border: 1px solid color-mix(in srgb, var(--border-color) 50%, transparent);
+  background: transparent;
+  border: 1px solid var(--border-color);
   color: var(--text-secondary);
 }
 
 .badgeSuccess {
-  background: rgba($success-color, 0.1);
-  border: 1px solid rgba($success-color, 0.2);
-  color: var(--success-color);
+  background: var(--success-badge-bg);
+  border: 1px solid var(--success-badge-border);
+  color: var(--success-badge-text);
 }
 
 .badgeWarning {
-  background: rgba($warning-color, 0.1);
-  border: 1px solid rgba($warning-color, 0.2);
-  color: var(--warning-color);
+  background: var(--warning-bg);
+  border: 1px solid var(--warning-border);
+  color: var(--warning-text);
 }
 
 .badgeMuted {
-  background: color-mix(in srgb, var(--bg-secondary) 82%, transparent);
-  border: 1px solid color-mix(in srgb, var(--border-color) 40%, transparent);
+  background: transparent;
+  border: 1px solid var(--border-color);
   color: var(--text-tertiary);
 }
 
@@ -369,20 +366,34 @@
   justify-content: center;
   border: 1px solid var(--border-color);
   border-radius: $radius-md;
-  background: var(--bg-primary);
+  background: transparent;
   color: var(--text-primary);
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
   text-decoration: none;
   transition:
-    border-color $transition-fast,
     background-color $transition-fast,
-    color $transition-fast;
+    transform 0.1s;
 
   &:hover {
-    border-color: var(--primary-color);
-    background: var(--bg-hover);
-    color: var(--primary-color);
+    background: var(--bg-tertiary);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--text-primary);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+
+    &:active {
+      transform: none;
+    }
   }
 }
 
@@ -405,13 +416,7 @@
   width: 40px;
   height: 40px;
   border-radius: 10px;
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--bg-secondary) 86%, transparent) 25%,
-    color-mix(in srgb, var(--bg-hover) 70%, transparent) 37%,
-    color-mix(in srgb, var(--bg-secondary) 86%, transparent) 63%
-  );
-  background-size: 400% 100%;
+  background: var(--bg-tertiary);
   animation: skeletonPulse 1.35s ease-in-out infinite;
   flex-shrink: 0;
 }
@@ -426,13 +431,7 @@
 .skeletonLine {
   height: 14px;
   border-radius: 4px;
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--bg-secondary) 86%, transparent) 25%,
-    color-mix(in srgb, var(--bg-hover) 70%, transparent) 37%,
-    color-mix(in srgb, var(--bg-secondary) 86%, transparent) 63%
-  );
-  background-size: 400% 100%;
+  background: var(--bg-tertiary);
   animation: skeletonPulse 1.35s ease-in-out infinite;
 
   &:first-child {
@@ -467,8 +466,8 @@
   h3 {
     margin: 0;
     color: var(--text-primary);
-    font-size: 16px;
-    font-weight: 700;
+    font-size: 15px;
+    font-weight: 600;
   }
 
   :global(.form-group) {
@@ -485,7 +484,7 @@
   padding: $spacing-md;
   border: 1px solid var(--border-color);
   border-radius: $radius-md;
-  background: color-mix(in srgb, var(--bg-secondary) 72%, transparent);
+  background: var(--bg-secondary);
 }
 
 .fieldText {
@@ -495,7 +494,7 @@
 .fieldLabel {
   color: var(--text-primary);
   font-size: 14px;
-  font-weight: 650;
+  font-weight: 500;
   overflow-wrap: anywhere;
 }
 
@@ -516,7 +515,7 @@
   label {
     color: var(--text-primary);
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 500;
     overflow-wrap: anywhere;
   }
 }
@@ -527,24 +526,25 @@
   border: 1px solid var(--border-color);
   border-radius: $radius-md;
   padding: 10px 12px;
-  background: var(--bg-primary);
+  background: var(--bg-secondary);
   color: var(--text-primary);
   font-family: $font-mono;
   font-size: 13px;
   line-height: 1.5;
 
   &:focus {
-    border-color: var(--primary-color);
+    border-color: var(--text-secondary);
     outline: none;
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 18%, transparent);
+    box-shadow: none;
   }
 }
 
 .fieldError {
   padding: 8px 10px;
-  border-radius: $radius-sm;
-  background: rgba($error-color, 0.1);
-  color: var(--danger-color);
+  border: 1px solid var(--failure-badge-border);
+  border-radius: $radius-md;
+  background: var(--failure-badge-bg);
+  color: var(--error-color);
   font-size: 12px;
   line-height: 1.4;
 }
@@ -553,19 +553,24 @@
   padding: $spacing-md;
   border: 1px dashed var(--border-color);
   border-radius: $radius-md;
-  background: color-mix(in srgb, var(--bg-secondary) 70%, transparent);
+  background: transparent;
   color: var(--text-secondary);
-  font-size: 14px;
+  font-size: 13px;
 }
 
 // ─── Animation ──────────────────────────────────────────
 
 @keyframes skeletonPulse {
-  0% {
-    background-position: 100% 0;
+  50% {
+    opacity: 0.5;
   }
-  100% {
-    background-position: 0 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeletonAvatar,
+  .skeletonLine,
+  .skeletonBody {
+    animation: none;
   }
 }
 
@@ -583,5 +588,4 @@
       width: 100%;
     }
   }
-
 }
