@@ -23,7 +23,7 @@ import {
 import {
   accentStyle,
   compareProviders,
-  planWeight,
+  planPriceUsd,
   providerFor,
   type PoolProvider,
 } from './registry';
@@ -74,7 +74,7 @@ function ProviderTotals({
   const summary = summarizeProvider(
     accounts,
     (account) => usage[account.key]?.usage ?? null,
-    (account, reading) => planWeight(provider, account.planOverride, reading?.planCode ?? null)
+    (account, reading) => planPriceUsd(provider, account.planOverride, reading?.planCode ?? null)
   );
   const weeklyLabel =
     summary.models.length > 0 ? t('pools.weekly_all_models') : t('pools.window_weekly');
@@ -110,7 +110,7 @@ function ProviderTotals({
         </div>
       )}
       <div className={styles.wl}>
-        {weeklyLabel} · {t('pools.plan_weighted_estimate')}
+        {weeklyLabel} · {t('pools.plan_value_remaining')}
       </div>
       {summary.weekly ? (
         <div className={styles.poolBar} aria-hidden="true">

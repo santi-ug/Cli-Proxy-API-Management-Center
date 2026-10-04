@@ -220,11 +220,14 @@ export type PercentTone = 'good' | 'mid' | 'low';
 export const percentTone = (leftPercent: number): PercentTone =>
   leftPercent >= 60 ? 'good' : leftPercent >= 25 ? 'mid' : 'low';
 
-/** Largest plan holding this window = 100%; smaller plans add capacity above 100%. */
+/** A fixed $100 of monthly plan value = 100%, across providers and quota windows. */
+export const PLAN_VALUE_BASELINE_USD = 100;
+
+/** Price-weighted quota estimate, not a cash balance or an interchangeable request budget. */
 export interface PoolTotal {
   leftPercent: number;
   capacityPercent: number;
-  /** Unrounded share of combined capacity, used by the single continuous bar. */
+  /** Unrounded share of combined plan value, used by the single continuous bar. */
   fillPercent: number;
 }
 
@@ -250,33 +253,31 @@ const sum = (values: readonly number[]) => values.reduce((total, value) => total
 const findWindow = (usage: AccountUsage | null, id: string) =>
   usage?.windows.find((window) => window.id === id) ?? null;
 
-/** Weight only holders of a window; missing usage or a holder's unknown tier hides the total. */
+/** Price-weight only holders of a window; missing usage or an unknown price hides the total. */
 export function summarizeProvider(
   accounts: readonly PoolAccount[],
   usageOf: (account: PoolAccount) => AccountUsage | null,
-  weightOf: (account: PoolAccount, usage: AccountUsage | null) => number | null
+  priceOf: (account: PoolAccount, usage: AccountUsage | null) => number | null
 ): ProviderSummary {
   const usages = accounts.map(usageOf);
-  const weights = accounts.map((account, index) => weightOf(account, usages[index]));
+  const prices = accounts.map((account, index) => priceOf(account, usages[index]));
   const totalFor = (id: string): PoolTotal | null => {
     let left = 0;
     let capacity = 0;
-    let largest = 0;
     for (let index = 0; index < accounts.length; index += 1) {
       const usage = usages[index];
       if (!usage) return null;
       const window = findWindow(usage, id);
       if (!window) continue;
-      const weight = weights[index];
-      if (weight === null || !Number.isFinite(weight) || weight <= 0) return null;
-      left += clampPercent(window.leftPercent) * weight;
-      capacity += weight;
-      largest = Math.max(largest, weight);
+      const price = prices[index];
+      if (price === null || !Number.isFinite(price) || price <= 0) return null;
+      left += clampPercent(window.leftPercent) * price;
+      capacity += price;
     }
-    return largest > 0
+    return capacity > 0
       ? {
-          leftPercent: Math.round(left / largest),
-          capacityPercent: Math.round((capacity / largest) * 100),
+          leftPercent: Math.round(left / PLAN_VALUE_BASELINE_USD),
+          capacityPercent: Math.round((capacity / PLAN_VALUE_BASELINE_USD) * 100),
           fillPercent: left / capacity,
         }
       : null;
