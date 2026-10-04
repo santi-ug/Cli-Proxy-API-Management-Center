@@ -142,12 +142,15 @@ describe('reset time text', () => {
     );
   });
 
-  test('relative and footer durations read like the mock', () => {
+  test('relative and footer durations always show the second unit', () => {
     const now = 0;
     const t = i18n.t.bind(i18n);
-    expect(formatResetIn(t, 2 * 3_600_000 + 20 * 60_000, now)).toBe('in 2 hr');
+    expect(formatResetIn(t, 2 * 3_600_000 + 20 * 60_000, now)).toBe('in 2 hr 20 min');
+    expect(formatResetIn(t, (6 * 24 + 4) * 3_600_000 + 59 * 60_000, now)).toBe('in 6 d 4 hr');
+    expect(formatResetIn(t, 45 * 60_000, now)).toBe('in 45 min');
     expect(formatDuration(t, (2 * 24 + 4) * 3_600_000)).toBe('2 d 4 hr');
-    expect(formatDuration(t, 3 * 24 * 3_600_000)).toBe('3 d');
+    expect(formatDuration(t, 3 * 24 * 3_600_000)).toBe('3 d 0 hr');
+    expect(formatDuration(t, 7 * 3_600_000 + 12 * 60_000)).toBe('7 hr 12 min');
     expect(formatDuration(t, 30_000)).toBe('1 min');
   });
 });

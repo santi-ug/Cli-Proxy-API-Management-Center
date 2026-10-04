@@ -4,7 +4,7 @@
  */
 
 import type { TFunction } from 'i18next';
-import { largestUnit, splitDuration } from './model';
+import { countdownParts } from './model';
 
 const sameDay = (a: Date, b: Date) =>
   a.getFullYear() === b.getFullYear() &&
@@ -24,20 +24,28 @@ export function formatResetClock(resetAtMs: number, now: number, locale?: string
   return `${date}, ${time}`;
 }
 
-/** `in 2 hr`, `in 3 d`. */
+/** `in 2 hr 47 min`, `in 6 d 4 hr`, `in 45 min`. */
 export function formatResetIn(t: TFunction, resetAtMs: number, now: number): string {
-  const { unit, value } = largestUnit(resetAtMs - now);
-  return t(`pools.in_${unit}`, { count: value });
+  const parts = countdownParts(resetAtMs - now);
+  switch (parts.kind) {
+    case 'days_hours':
+      return t('pools.in_days_hours', { days: parts.days, hours: parts.hours });
+    case 'hours_minutes':
+      return t('pools.in_hours_minutes', { hours: parts.hours, minutes: parts.minutes });
+    case 'minutes':
+      return t('pools.in_min', { count: parts.minutes });
+  }
 }
 
-/** `2 d 4 hr`, `7 hr`, `45 min`, for the card footer. */
+/** `2 d 4 hr`, `7 hr 12 min`, `45 min`, for the card footer. */
 export function formatDuration(t: TFunction, ms: number): string {
-  const { days, hours, minutes } = splitDuration(ms);
-  if (days > 0) {
-    return hours > 0
-      ? t('pools.duration_days_hours', { days, hours })
-      : t('pools.duration_days', { days });
+  const parts = countdownParts(ms);
+  switch (parts.kind) {
+    case 'days_hours':
+      return t('pools.duration_days_hours', { days: parts.days, hours: parts.hours });
+    case 'hours_minutes':
+      return t('pools.duration_hours_minutes', { hours: parts.hours, minutes: parts.minutes });
+    case 'minutes':
+      return t('pools.duration_minutes', { minutes: parts.minutes });
   }
-  if (hours > 0) return t('pools.duration_hours', { hours });
-  return t('pools.duration_minutes', { minutes: Math.max(1, minutes) });
 }
