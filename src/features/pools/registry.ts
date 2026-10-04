@@ -27,8 +27,8 @@ export interface PoolProvider {
   Glyph: (props: { size: number }) => ReactElement;
   /** How often the page re-reads usage while open; null never polls. */
   pollMs: number | null;
-  /** Provider plan code → display label. Unknown codes show raw. */
-  plans: Readonly<Record<string, string>>;
+  /** Provider plan code → label and advertised capacity relative to the base plan. */
+  plans: Readonly<Record<string, { label: string; weight: number }>>;
   fetchUsage: ((account: PoolAccount) => Promise<AccountUsage>) | null;
   redeemReset: ((account: PoolAccount) => Promise<ResetResult>) | null;
   /** i18n key for the line under a non-zero banked-resets count. */
@@ -47,9 +47,9 @@ export const POOL_PROVIDERS: Readonly<Record<string, PoolProvider>> = {
     // Anthropic's usage endpoint is touchy: at most every 10 minutes per account.
     pollMs: 10 * MINUTE,
     plans: {
-      default_claude_max_5x: 'Max 5x ($100)',
-      default_claude_max_20x: 'Max 20x ($200)',
-      default_claude_ai: 'Pro ($20)',
+      default_claude_max_5x: { label: 'Max 5x ($100)', weight: 5 },
+      default_claude_max_20x: { label: 'Max 20x ($200)', weight: 20 },
+      default_claude_ai: { label: 'Pro ($20)', weight: 1 },
     },
     fetchUsage: fetchClaudeUsage,
     redeemReset: redeemClaudeReset,
@@ -63,8 +63,8 @@ export const POOL_PROVIDERS: Readonly<Record<string, PoolProvider>> = {
     Glyph: CodexGlyph,
     pollMs: 5 * MINUTE,
     plans: {
-      plus: 'Plus ($20)',
-      pro: 'Pro 20x ($200)',
+      plus: { label: 'Plus ($20)', weight: 1 },
+      pro: { label: 'Pro 20x ($200)', weight: 20 },
     },
     fetchUsage: fetchCodexUsage,
     redeemReset: redeemCodexReset,
@@ -110,7 +110,17 @@ export function planLabel(
 ): string | null {
   if (override) return override;
   if (!code) return null;
-  return provider.plans[code] ?? code;
+  return provider.plans[code]?.label ?? code;
+}
+
+/** The reported tier wins; an exact known display label is a fallback after a failed tier read. */
+export function planWeight(
+  provider: Pick<PoolProvider, 'plans'>,
+  override: string | null,
+  code: string | null
+): number | null {
+  if (code) return provider.plans[code]?.weight ?? null;
+  return Object.values(provider.plans).find((plan) => plan.label === override)?.weight ?? null;
 }
 
 /** Hands the provider color to the bars, dots and plan label underneath. */

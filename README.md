@@ -176,3 +176,5 @@ Use a trusted device or dedicated browser profile. Enable remote management only
 </div>
 
 The pool switches persist intent. Auto needs the fleet pool router to apply policy and update status; this UI does not run the router. Manual refreshes wait at least 60 seconds per account; Claude polls every 10 minutes and Codex every 5 minutes.
+
+Pool summaries estimate the percentage of combined plan capacity left. Claude Pro counts as 1×, Max 5x as 5× and Max 20x as 20×; Codex Plus counts as 1× and Pro 20x as 20×. Weekly bar segments have those same proportions, with each account's multiplier shown below. These are plan-weighted estimates, since actual limits depend on the model and workload. Individual account percentages stay relative to their own plan. Missing usage or an unknown holder's capacity hides that window's total. See [the calculation and tier lookup](docs/decisions/001-pool-capacity.md).

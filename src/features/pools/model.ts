@@ -220,10 +220,15 @@ export type PercentTone = 'good' | 'mid' | 'low';
 export const percentTone = (leftPercent: number): PercentTone =>
   leftPercent >= 60 ? 'good' : leftPercent >= 25 ? 'mid' : 'low';
 
-/** A sum of what is left against `accounts × 100%`. */
+/** Estimated percent of this window's combined plan capacity remaining. */
 export interface PoolTotal {
-  left: number;
-  capacity: number;
+  leftPercent: number;
+}
+
+export interface PoolSegment {
+  leftPercent: number | null;
+  /** Base-plan equivalents, never inferred from price. Null means an unknown tier. */
+  weight: number | null;
 }
 
 export interface ModelTotal {
@@ -236,8 +241,8 @@ export interface ModelTotal {
 
 export interface ProviderSummary {
   weekly: PoolTotal | null;
-  /** One entry per account, in account order: weekly % left, or null while unknown. */
-  weeklySegments: Array<number | null>;
+  /** One entry per account, in account order, including unknown readings and tiers. */
+  weeklySegments: PoolSegment[];
   fiveHour: PoolTotal | null;
   models: ModelTotal[];
   banked: number | null;
@@ -247,28 +252,37 @@ export interface ProviderSummary {
 
 const sum = (values: readonly number[]) => values.reduce((total, value) => total + value, 0);
 
-const sumWindows = (lefts: number[]): PoolTotal | null =>
-  lefts.length === 0 ? null : { left: sum(lefts), capacity: lefts.length * 100 };
-
 const findWindow = (usage: AccountUsage | null, id: string) =>
   usage?.windows.find((window) => window.id === id) ?? null;
 
-/** Percentages are rounded per account first so totals add up to the numbers on screen. */
+/** Weight only holders of a window; missing usage or a holder's unknown tier hides the total. */
 export function summarizeProvider(
   accounts: readonly PoolAccount[],
-  usageOf: (account: PoolAccount) => AccountUsage | null
+  usageOf: (account: PoolAccount) => AccountUsage | null,
+  weightOf: (account: PoolAccount, usage: AccountUsage | null) => number | null
 ): ProviderSummary {
   const usages = accounts.map(usageOf);
-  const rounded = (id: string) =>
-    usages.flatMap((usage) => {
+  const weights = accounts.map((account, index) => weightOf(account, usages[index]));
+  const totalFor = (id: string): PoolTotal | null => {
+    let left = 0;
+    let capacity = 0;
+    for (let index = 0; index < accounts.length; index += 1) {
+      const usage = usages[index];
+      if (!usage) return null;
       const window = findWindow(usage, id);
-      return window ? [Math.round(window.leftPercent)] : [];
-    });
+      if (!window) continue;
+      const weight = weights[index];
+      if (weight === null || !Number.isFinite(weight) || weight <= 0) return null;
+      left += clampPercent(window.leftPercent) * weight;
+      capacity += weight;
+    }
+    return capacity > 0 ? { leftPercent: Math.round(left / capacity) } : null;
+  };
 
   const models = usageColumns(usages)
     .filter((column) => column.kind === 'model-weekly' && column.model)
     .flatMap((column): ModelTotal[] => {
-      const total = sumWindows(rounded(column.id));
+      const total = totalFor(column.id);
       if (!total || !column.model) return [];
       const holders = accounts.filter((_, index) => findWindow(usages[index], column.id));
       return [
@@ -289,12 +303,15 @@ export function summarizeProvider(
   );
 
   return {
-    weekly: sumWindows(rounded('weekly')),
-    weeklySegments: usages.map((usage) => {
+    weekly: totalFor('weekly'),
+    weeklySegments: usages.map((usage, index) => {
       const window = findWindow(usage, 'weekly');
-      return window ? Math.round(window.leftPercent) : null;
+      return {
+        leftPercent: window ? Math.round(window.leftPercent) : null,
+        weight: weights[index],
+      };
     }),
-    fiveHour: sumWindows(rounded('five-hour')),
+    fiveHour: totalFor('five-hour'),
     models,
     banked: bankedCounts.length > 0 ? sum(bankedCounts) : null,
     next: pickNextRequest(accounts),
