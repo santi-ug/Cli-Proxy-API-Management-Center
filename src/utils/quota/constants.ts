@@ -5,62 +5,63 @@
 import type { TypeColorSet } from '@/types';
 
 // Theme colors for type badges — 与 authFiles/constants.ts 保持同步
+// Dark: only Claude, Codex and Grok (xai) keep an accent; every other provider is neutral.
 export const TYPE_COLORS: Record<string, TypeColorSet> = {
   qwen: {
     light: { bg: '#ede5fd', text: '#5530c7' },
-    dark: { bg: '#36208a', text: '#b5a3f0' },
+    dark: { bg: '#1d1d20', text: '#c7c7cc' },
   },
   gemini: {
     light: { bg: '#e3f2fd', text: '#1565c0' },
-    dark: { bg: '#0d47a1', text: '#64b5f6' },
+    dark: { bg: '#1d1d20', text: '#c7c7cc' },
   },
   aistudio: {
     light: { bg: '#f0f2f5', text: '#2f343c' },
-    dark: { bg: '#373c42', text: '#cfd3db' },
+    dark: { bg: '#1d1d20', text: '#c7c7cc' },
   },
   claude: {
     light: { bg: '#fbece4', text: '#c05621' },
-    dark: { bg: '#5e2c14', text: '#e8a882' },
+    dark: { bg: 'rgba(242, 164, 107, 0.12)', text: '#f2a46b' },
   },
   codex: {
     light: { bg: '#eae7ff', text: '#3538d4' },
-    dark: { bg: '#262395', text: '#b5b0ff' },
+    dark: { bg: 'rgba(90, 169, 255, 0.12)', text: '#5aa9ff' },
   },
   devin: {
     light: { bg: '#e8f4ff', text: '#155e9b' },
-    dark: { bg: '#123b5d', text: '#8dc9f5' },
+    dark: { bg: '#1d1d20', text: '#c7c7cc' },
   },
   meta: {
     light: { bg: '#e3f2fd', text: '#1565c0' },
-    dark: { bg: '#0d47a1', text: '#64b5f6' },
+    dark: { bg: '#1d1d20', text: '#c7c7cc' },
   },
   kimi: {
     light: { bg: '#dce8ff', text: '#0560cf' },
-    dark: { bg: '#003880', text: '#70b5ff' },
+    dark: { bg: '#1d1d20', text: '#c7c7cc' },
   },
   antigravity: {
     light: { bg: '#e0f7fa', text: '#006064' },
-    dark: { bg: '#004d40', text: '#80deea' },
+    dark: { bg: '#1d1d20', text: '#c7c7cc' },
   },
   xai: {
     light: { bg: '#f3f4f6', text: '#111827', border: '1px solid #d1d5db' },
-    dark: { bg: '#111827', text: '#f9fafb', border: '1px solid #374151' },
+    dark: { bg: 'rgba(95, 211, 141, 0.12)', text: '#5fd38d' },
   },
   iflow: {
     light: { bg: '#f5e3fc', text: '#9025c8' },
-    dark: { bg: '#521490', text: '#d49cf5' },
+    dark: { bg: '#1d1d20', text: '#c7c7cc' },
   },
   vertex: {
     light: { bg: '#e4edfd', text: '#2b5fbc' },
-    dark: { bg: '#1a3d80', text: '#89b3f7' },
+    dark: { bg: '#1d1d20', text: '#c7c7cc' },
   },
   empty: {
     light: { bg: '#f5f5f5', text: '#616161' },
-    dark: { bg: '#424242', text: '#bdbdbd' },
+    dark: { bg: '#1d1d20', text: '#c7c7cc' },
   },
   unknown: {
     light: { bg: '#f0f0f0', text: '#666666', border: '1px dashed #999999' },
-    dark: { bg: '#3a3a3a', text: '#aaaaaa', border: '1px dashed #666666' },
+    dark: { bg: '#1d1d20', text: '#8e8e93', border: '1px dashed #34343a' },
   },
 };
 

@@ -194,7 +194,7 @@ export type HeaderMetaInput = {
 };
 
 /**
- * 头部 ▍mono meta 行直接消费页面状态机，避免 Header 与保存栏各自推导连接/加载状态。
+ * 头部 meta 行直接消费页面状态机，避免 Header 与保存栏各自推导连接/加载状态。
  * 字段总数常驻；阻断状态优先，编辑状态再补充待保存和校验错误数量。
  */
 export function buildHeaderMeta(input: HeaderMetaInput): HeaderMetaSegment[] {

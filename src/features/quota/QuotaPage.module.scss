@@ -52,15 +52,19 @@
   flex: 0 1 340px;
   min-width: 0;
   height: 36px;
-  border: 1px solid transparent;
-  border-radius: 10px;
-  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: $radius-md;
+  background: var(--bg-primary);
   color: var(--text-secondary);
+  transition: border-color 0.15s ease;
 
-  &:focus-within {
+  &:hover {
     border-color: var(--border-hover);
-    outline: 2px solid var(--primary-color);
-    outline-offset: 2px;
+  }
+
+  /* 输入框聚焦：只提亮描边，不加光环 */
+  &:focus-within {
+    border-color: var(--text-secondary);
   }
 }
 
@@ -104,13 +108,13 @@
   height: 32px;
   padding: 0;
   border: 0;
-  border-radius: 8px;
+  border-radius: 6px;
   background: transparent;
   color: var(--text-secondary);
   cursor: pointer;
 
   &:focus-visible {
-    outline: 2px solid var(--primary-color);
+    outline: 2px solid var(--text-primary);
     outline-offset: -2px;
   }
 
@@ -124,27 +128,14 @@
   min-width: 148px;
   max-width: 100%;
 
+  /* 其余外观（描边、聚焦、悬停）交给共享 Select，这里只对齐搜索框高度 */
   button[aria-haspopup='listbox'] {
     height: 36px;
-    border-color: transparent;
-    border-radius: 10px;
-    background: transparent;
-    box-shadow: none;
-    color: var(--text-secondary);
-
-    &:focus-visible,
-    &[aria-expanded='true'] {
-      outline: 2px solid var(--primary-color);
-      outline-offset: 2px;
-      background: var(--bg-secondary);
-      color: var(--text-primary);
-    }
   }
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .clearSearch:hover,
-  .sort button[aria-haspopup='listbox']:hover {
+  .clearSearch:hover {
     background: var(--bg-tertiary);
     color: var(--text-primary);
   }
@@ -175,10 +166,10 @@
 .errorBanner {
   font-size: 12.5px;
   line-height: 1.5;
-  color: var(--danger-color);
-  background: var(--bg-error-light);
-  border: 1px solid var(--warning-border);
-  border-radius: 10px;
+  color: var(--failure-badge-text);
+  background: var(--failure-badge-bg);
+  border: 1px solid var(--failure-badge-border);
+  border-radius: $radius-md;
   padding: 9px 12px;
   overflow-wrap: anywhere;
 }

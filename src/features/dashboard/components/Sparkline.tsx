@@ -1,4 +1,4 @@
-import { useId, useMemo } from 'react';
+import { useMemo } from 'react';
 import { buildSmoothLinePath } from './curve';
 import styles from './Sparkline.module.scss';
 
@@ -20,8 +20,6 @@ interface SparklineProps {
  * 单序列，因此不需要图例；数值由所在卡片的文本承载。
  */
 export function Sparkline({ points, color, ariaLabel, className }: SparklineProps) {
-  const gradientId = useId();
-
   const geometry = useMemo(() => {
     const values = points.filter((value) => Number.isFinite(value));
     if (values.length === 0) {
@@ -66,13 +64,9 @@ export function Sparkline({ points, color, ariaLabel, className }: SparklineProp
       role="img"
       aria-label={ariaLabel}
     >
-      <defs>
-        <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={strokeColor} stopOpacity="0.16" />
-          <stop offset="100%" stopColor={strokeColor} stopOpacity="0.01" />
-        </linearGradient>
-      </defs>
-      {!geometry.isFlat && <path d={geometry.area} fill={`url(#${gradientId})`} stroke="none" />}
+      {!geometry.isFlat && (
+        <path d={geometry.area} fill={strokeColor} fillOpacity={0.1} stroke="none" />
+      )}
       <path
         d={geometry.line}
         fill="none"

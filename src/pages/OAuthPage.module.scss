@@ -27,9 +27,17 @@
 
 .pageTitle {
   font-size: 28px;
-  font-weight: 700;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
   color: var(--text-primary);
-  margin: 0 0 $spacing-xl 0;
+  margin: 0 0 $spacing-lg 0;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-color);
+
+  @include mobile {
+    font-size: 22px;
+  }
 }
 
 .content {
@@ -53,42 +61,27 @@
 .sectionTitle {
   margin: 0;
   color: var(--text-secondary);
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
 }
 
+// Featured providers sit first but stay flat like every other card.
 .featuredCard {
   position: relative;
-  overflow: hidden;
-  border-color: #000;
-  background:
-    radial-gradient(circle at 92% -35%, rgba(23, 131, 255, 0.24), transparent 42%),
-    linear-gradient(
-      135deg,
-      color-mix(in srgb, #1783ff 10%, var(--bg-primary)),
-      var(--bg-primary) 64%
-    );
-  box-shadow:
-    0 14px 32px -26px rgba(23, 131, 255, 0.95),
-    var(--shadow);
-
-  > * {
-    position: relative;
-    z-index: 1;
-  }
 
   .cardTitle {
     gap: $spacing-md;
-    font-size: 21px;
+    font-size: 17px;
   }
 
   .cardTitleIcon {
     box-sizing: content-box;
-    width: 24px;
-    height: 24px;
-    padding: 7px;
-    border-radius: 11px;
+    width: 22px;
+    height: 22px;
+    padding: 6px;
+    border-radius: 8px;
     background: #000;
   }
 
@@ -96,17 +89,6 @@
     display: flex;
     flex-wrap: wrap;
     gap: $spacing-sm;
-  }
-
-  :global(.btn-primary) {
-    border-color: #1783ff;
-    background: #1783ff;
-    box-shadow: 0 8px 20px -12px rgba(23, 131, 255, 0.9);
-
-    &:hover {
-      border-color: #0875ed;
-      background: #0875ed;
-    }
   }
 
   @include mobile {
@@ -125,12 +107,12 @@
   align-items: center;
   min-height: 24px;
   padding: 3px 9px;
-  border: 1px solid rgba(23, 131, 255, 0.34);
-  border-radius: $radius-full;
-  background: rgba(23, 131, 255, 0.11);
-  color: color-mix(in srgb, #1783ff 82%, var(--text-primary));
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0;
   line-height: 1;
   white-space: nowrap;
@@ -140,8 +122,8 @@
   max-width: 720px;
   margin: 0;
   color: var(--text-secondary);
-  font-size: 15px;
-  line-height: 1.65;
+  font-size: 13px;
+  line-height: 1.6;
 }
 
 .cardContent {
@@ -200,19 +182,23 @@
   border-radius: $radius-md;
   font-size: 14px;
 
+  border: 1px solid var(--border-color);
+
   &.success {
-    background-color: rgba(34, 197, 94, 0.1);
-    color: #16a34a;
+    border-color: var(--success-badge-border);
+    background-color: var(--success-badge-bg);
+    color: var(--success-badge-text);
   }
 
   &.error {
-    background-color: rgba($error-color, 0.12);
-    color: $error-color;
+    border-color: var(--failure-badge-border);
+    background-color: var(--failure-badge-bg);
+    color: var(--failure-badge-text);
   }
 
   &.waiting {
-    background-color: rgba($primary-color, 0.12);
-    color: var(--primary-color);
+    background-color: transparent;
+    color: var(--text-secondary);
   }
 }
 
@@ -244,7 +230,9 @@
 }
 
 .authUrlValue {
-  font-weight: 700;
+  font-family: $font-mono;
+  font-size: 13px;
+  font-weight: 500;
   color: var(--text-primary);
   word-break: break-all;
   overflow-wrap: anywhere;

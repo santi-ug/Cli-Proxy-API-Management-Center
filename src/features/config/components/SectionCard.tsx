@@ -15,7 +15,7 @@ export type SectionCardProps = {
 
 /**
  * 分区卡片：自然高度纵向流（替代旧的固定高度滚动吸附轮播）。
- * 表面配方与全站卡片一致：14px 圆角 / 1px 描边 / 82% color-mix。
+ * 表面配方与全站卡片一致：10px 圆角 / 1px 描边 / --bg-primary 实色。
  */
 export function SectionCard({
   indexLabel,

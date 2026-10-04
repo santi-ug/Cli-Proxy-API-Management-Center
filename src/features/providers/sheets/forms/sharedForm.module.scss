@@ -17,15 +17,15 @@
   }
 
   .sectionTitle {
-    font-size: 17px;
-    font-weight: 700;
+    font-size: 15px;
+    font-weight: 600;
     line-height: 1.35;
-    letter-spacing: 0;
+    letter-spacing: -0.005em;
   }
 
   .sectionDesc {
     max-width: 72ch;
-    font-size: 14px;
+    font-size: 13px;
     line-height: 1.6;
     color: var(--text-secondary);
   }
@@ -36,7 +36,7 @@
 
   .label {
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 500;
     line-height: 1.45;
   }
 
@@ -49,7 +49,7 @@
   .input,
   .textarea,
   .discoverySearch {
-    font-size: 14px;
+    font-size: 13px;
     line-height: 1.45;
   }
 
@@ -67,7 +67,7 @@
 
     strong {
       font-size: 14px;
-      font-weight: 650;
+      font-weight: 600;
       line-height: 1.4;
     }
   }
@@ -93,7 +93,7 @@
 
   .sponsorProtocolName {
     font-size: 13px;
-    font-weight: 650;
+    font-weight: 600;
     line-height: 1.4;
   }
 
@@ -114,19 +114,19 @@
   .addBtn,
   .removeBtn {
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 500;
     line-height: 1;
   }
 
   .footerBtn {
-    font-size: 14px;
-    font-weight: 600;
+    font-size: 13px;
+    font-weight: 500;
     line-height: 1;
   }
 
   details summary {
     font-size: 14px;
-    font-weight: 650;
+    font-weight: 600;
     line-height: 1.45;
   }
 }
@@ -180,20 +180,24 @@
   padding: 8px 12px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-color);
-  background: var(--bg-primary);
+  background: var(--bg-secondary);
   color: var(--text-primary);
   font-size: 13px;
   font-family: inherit;
   box-sizing: border-box;
+  transition: border-color $transition-fast;
 
   &::placeholder {
     color: var(--text-tertiary);
   }
 
+  &:hover:not(:disabled):not(:focus) {
+    border-color: var(--border-hover);
+  }
+
   &:focus {
     outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px var(--primary-10);
+    border-color: var(--text-secondary);
   }
 
   &:disabled {
@@ -223,8 +227,8 @@
   width: 16px;
   height: 16px;
   border-radius: 4px;
-  border: 1px solid var(--border-color);
-  background: var(--bg-primary);
+  border: 1px solid var(--border-hover);
+  background: var(--bg-secondary);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -248,7 +252,7 @@
   }
 
   &:focus-visible {
-    outline: 2px solid var(--primary-color);
+    outline: 2px solid var(--text-primary);
     outline-offset: 2px;
   }
 }
@@ -354,7 +358,7 @@
   cursor: pointer;
 
   &:focus-visible {
-    outline: 2px solid var(--primary-color);
+    outline: 2px solid var(--text-primary);
     outline-offset: 3px;
     border-radius: var(--radius-sm);
   }
@@ -423,26 +427,30 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   padding: 0;
-  border: 1px solid transparent;
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   background: transparent;
-  color: var(--text-tertiary);
+  color: var(--text-primary);
   cursor: pointer;
   transition:
     background-color $transition-fast,
-    color $transition-fast;
+    color $transition-fast,
+    transform 0.1s;
 
   &:hover {
     background: var(--bg-tertiary);
-    color: var(--text-primary);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.95);
   }
 
   &:focus-visible {
-    outline: 2px solid var(--primary-color);
-    outline-offset: -1px;
+    outline: 2px solid var(--text-primary);
+    outline-offset: 2px;
   }
 }
 
@@ -501,13 +509,14 @@
   }
 
   &:hover {
-    border-color: var(--primary-color);
+    border-color: var(--border-hover);
   }
 }
 
-.sponsorUrlOptionActive {
-  border-color: var(--primary-color);
-  background: var(--primary-10);
+.sponsorUrlOptionActive,
+.sponsorUrlOptionActive:hover {
+  border-color: var(--text-secondary);
+  background: var(--bg-tertiary);
 }
 
 .sponsorUrlOptionText {
@@ -622,7 +631,7 @@
   padding: 0 12px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-color);
-  background: var(--bg-primary);
+  background: transparent;
   color: var(--text-primary);
   font-size: 12px;
   font-weight: 500;
@@ -632,8 +641,12 @@
     border-color $transition-fast;
 
   &:hover:not(:disabled) {
-    border-color: var(--primary-color);
-    color: var(--primary-color);
+    background: var(--bg-tertiary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--text-primary);
+    outline-offset: 2px;
   }
 
   &:disabled {
@@ -662,6 +675,11 @@
   &:hover:not(:disabled) {
     background: var(--bg-tertiary);
     color: var(--text-primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--text-primary);
+    outline-offset: 2px;
   }
 
   &:disabled {
@@ -756,8 +774,7 @@
 
   &:focus {
     outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px var(--primary-10);
+    border-color: var(--text-secondary);
   }
 }
 
@@ -846,10 +863,10 @@
 .discoveryAddedTag {
   font-size: 11px;
   color: var(--muted-foreground);
-  padding: 2px 8px;
-  border-radius: var(--radius-md);
+  padding: 1px 7px;
+  border-radius: 6px;
   border: 1px solid var(--border-color);
-  background: var(--bg-primary);
+  background: transparent;
 }
 
 .discoveryFooter {
@@ -878,8 +895,13 @@
     background: var(--primary-hover);
   }
 
+  &:focus-visible {
+    outline: 2px solid var(--text-primary);
+    outline-offset: 2px;
+  }
+
   &:disabled {
-    opacity: 0.6;
+    opacity: 0.45;
     cursor: not-allowed;
   }
 }
@@ -921,6 +943,11 @@
 
   &:hover:not(:disabled) {
     color: var(--text-primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--text-primary);
+    outline-offset: 1px;
   }
 
   &:disabled {
@@ -1028,8 +1055,8 @@
 }
 
 .thinkingLevelOptionSelected {
-  border-color: color-mix(in srgb, var(--primary-color) 50%, var(--border-color));
-  background: color-mix(in srgb, var(--primary-color) 8%, var(--bg-primary));
+  border-color: var(--text-secondary);
+  background: var(--bg-tertiary);
 
   .thinkingLevelLabel {
     color: var(--text-primary);
@@ -1059,11 +1086,11 @@
   display: inline-flex;
   align-items: center;
   padding: 1px 7px;
-  border-radius: 999px;
+  border-radius: 6px;
   border: 1px solid var(--border-color);
-  background: var(--bg-tertiary);
-  color: var(--muted-foreground);
-  font-size: 10px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 11px;
   font-weight: 500;
   white-space: nowrap;
   flex-shrink: 0;
@@ -1076,16 +1103,21 @@
   gap: 6px;
   padding: 6px 12px;
   border-radius: var(--radius-md);
-  border: 1px dashed var(--border-color);
-  background: var(--bg-primary);
+  border: 1px dashed var(--border-hover);
+  background: transparent;
   color: var(--text-secondary);
   cursor: pointer;
   font-size: 12px;
   font-weight: 500;
 
   &:hover {
-    border-color: var(--primary-color);
-    color: var(--primary-color);
+    color: var(--text-primary);
+    background: var(--bg-tertiary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--text-primary);
+    outline-offset: 2px;
   }
 }
 
@@ -1102,7 +1134,12 @@
   font-size: 12px;
 
   &:hover {
-    background: var(--destructive-10);
+    background: var(--bg-tertiary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--text-primary);
+    outline-offset: 2px;
   }
 
   &:disabled {
@@ -1117,8 +1154,8 @@
   gap: 6px;
   padding: 6px 12px;
   border-radius: var(--radius-md);
-  border: 1px dashed var(--border-color);
-  background: var(--bg-primary);
+  border: 1px dashed var(--border-hover);
+  background: transparent;
   color: var(--text-secondary);
   cursor: pointer;
   font-size: 12px;
@@ -1126,8 +1163,13 @@
   align-self: flex-start;
 
   &:hover {
-    border-color: var(--primary-color);
-    color: var(--primary-color);
+    color: var(--text-primary);
+    background: var(--bg-tertiary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--text-primary);
+    outline-offset: 2px;
   }
 }
 
@@ -1141,29 +1183,43 @@
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color $transition-fast;
+  transition:
+    background-color $transition-fast,
+    color $transition-fast,
+    transform 0.1s;
   border: 1px solid transparent;
   background: transparent;
   color: var(--text-primary);
 
+  &:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--text-primary);
+    outline-offset: 2px;
+  }
+
   &:disabled {
-    opacity: 0.6;
+    opacity: 0.45;
     cursor: not-allowed;
   }
 }
 
+// Ghost reads as a text link, like the shared .btn-ghost.
 .footerBtnGhost {
   background: transparent;
   border-color: transparent;
+  color: var(--text-secondary);
 
   &:hover:not(:disabled) {
-    background: var(--bg-tertiary);
+    color: var(--text-primary);
   }
 }
 
 .footerBtnOutline {
   border-color: var(--border-color);
-  background: var(--bg-primary);
+  background: transparent;
 
   &:hover:not(:disabled) {
     background: var(--bg-tertiary);
@@ -1171,6 +1227,7 @@
 }
 
 .footerBtnPrimary {
+  border-color: var(--primary-color);
   background: var(--primary-color);
   color: var(--primary-contrast);
 
@@ -1187,7 +1244,9 @@
 
 .apiKeyEntriesLabel {
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
   color: var(--text-secondary);
   margin-bottom: 6px;
 }
@@ -1220,17 +1279,18 @@
   justify-content: center;
   width: 20px;
   height: 20px;
-  border-radius: 50%;
-  background: var(--primary-color);
-  color: var(--primary-contrast);
+  border-radius: 6px;
+  background: var(--count-badge-bg);
+  color: var(--count-badge-text);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
   flex-shrink: 0;
 }
 
 .apiKeyEntryKey {
-  font-family: 'Monaco', 'Menlo', 'Consolas', 'Ubuntu Mono', monospace;
-  font-weight: 600;
+  font-family: $font-mono;
+  font-weight: 500;
   color: var(--text-primary);
   min-width: 0;
   max-width: 100%;
@@ -1262,10 +1322,12 @@
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  padding: 2px 6px;
-  border-radius: 10px;
-  font-size: 10px;
-  font-weight: 600;
+  padding: 1px 6px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
 
   svg {
     display: block;
@@ -1274,10 +1336,27 @@
 
 .apiKeyEntryStatSuccess {
   background: var(--success-badge-bg);
+  border-color: var(--success-badge-border);
   color: var(--success-badge-text);
 }
 
 .apiKeyEntryStatFailure {
   background: var(--failure-badge-bg);
+  border-color: var(--failure-badge-border);
   color: var(--failure-badge-text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .entryCardIconBtn,
+  .footerBtn {
+    transition: none;
+
+    &:active:not(:disabled) {
+      transform: none;
+    }
+  }
+
+  .statusIconLoading {
+    animation: none;
+  }
 }

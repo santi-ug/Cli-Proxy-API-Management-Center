@@ -1,4 +1,4 @@
-import { useId, useMemo } from 'react';
+import { useMemo } from 'react';
 import { buildSmoothLinePath, type CurvePoint } from './curve';
 import styles from './LiveWire.module.scss';
 
@@ -15,12 +15,10 @@ interface LiveWireProps {
 
 /**
  * Hero 签名元素：横贯 hero 底部的实时流量脉搏线。
- * 真实桶数据 → 平滑曲线 + 渐变面积，最新一桶的末端带呼吸光点；
- * 无流量时退化为一条安静的虚线基线。
+ * 真实桶数据 → 平滑曲线 + 淡色面积，最新一桶的末端带一枚光点；
+ * 无流量时退化为一条安静的实线基线。
  */
 export function LiveWire({ points, ariaLabel, className }: LiveWireProps) {
-  const gradientId = useId();
-
   const geometry = useMemo(() => {
     const values = points.filter((value) => Number.isFinite(value));
     if (values.length < 2) return null;
@@ -74,13 +72,7 @@ export function LiveWire({ points, ariaLabel, className }: LiveWireProps) {
             role="img"
             aria-label={ariaLabel}
           >
-            <defs>
-              <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="var(--wire-color)" stopOpacity="0.2" />
-                <stop offset="100%" stopColor="var(--wire-color)" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-            <path className={styles.area} d={geometry.area} fill={`url(#${gradientId})`} />
+            <path className={styles.area} d={geometry.area} />
             <path
               className={styles.line}
               d={geometry.line}

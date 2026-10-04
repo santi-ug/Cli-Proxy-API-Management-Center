@@ -20,7 +20,7 @@ export interface QuotaClassMap {
   quotaAmount: string;
   quotaMessage: string;
   // 套餐 chip 行（codex 命名，claude/antigravity/kimi/xai 复用；
-  // premium=金卡、elite=Pro 20x 液态铂金 —— 均为定稿资产，样式不可改）
+  // premium / elite 是高两档套餐的徽章，外观由各宿主样式决定）
   codexPlan: string;
   codexPlanItem: string;
   codexPlanLabel: string;

@@ -52,10 +52,10 @@
 .chip {
   display: inline-flex;
   align-items: center;
-  padding: 3px 9px;
-  border-radius: var(--radius-md);
+  padding: 1px 7px;
+  border-radius: 6px;
   border: 1px solid var(--border-color);
-  background: var(--muted-bg);
+  background: transparent;
   color: var(--muted-foreground);
   font-size: 12px;
 }
@@ -71,10 +71,10 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 3px 9px;
-  border-radius: var(--radius-md);
+  padding: 1px 7px;
+  border-radius: 6px;
   border: 1px solid var(--border-color);
-  background: var(--muted-bg);
+  background: transparent;
   font-size: 12px;
   line-height: 1.4;
   white-space: nowrap;
@@ -86,18 +86,18 @@
 
 .metricValue {
   color: var(--text-primary);
-  font-weight: 600;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
 
 .flagTag {
   display: inline-flex;
   align-items: center;
-  padding: 3px 9px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--primary-30);
-  background: var(--primary-10);
-  color: var(--primary-color);
+  padding: 1px 7px;
+  border-radius: 6px;
+  border: 1px solid var(--border-hover);
+  background: transparent;
+  color: var(--text-primary);
   font-size: 12px;
   font-weight: 500;
   line-height: 1.4;
@@ -108,8 +108,8 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 3px 9px;
-  border-radius: var(--radius-md);
+  padding: 1px 7px;
+  border-radius: 6px;
   border: 1px solid;
   font-size: 12px;
   font-weight: 500;
@@ -136,10 +136,10 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 2px 7px;
-  border-radius: 999px;
+  padding: 1px 7px;
+  border-radius: 6px;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.4;
   border: 1px solid transparent;
   white-space: nowrap;
@@ -164,10 +164,11 @@
   color: var(--success-badge-text);
 }
 
+// Disabled is a choice, not a problem: neutral and dimmed.
 .statusDisabled {
-  border-color: var(--amber-30);
-  background: var(--amber-10);
-  color: var(--amber-text);
+  border-color: var(--border-color);
+  background: transparent;
+  color: var(--text-tertiary);
 }
 
 .statusBarWrap {
@@ -181,7 +182,7 @@
   right: 0;
   width: 176px;
   min-width: 176px;
-  box-shadow: -12px 0 16px -18px rgba(15, 23, 42, 0.45);
+  box-shadow: inset 1px 0 0 var(--border-color);
 }
 
 .actionsHead {
@@ -219,28 +220,40 @@
   width: 30px;
   height: 30px;
   padding: 0;
-  border: 1px solid transparent;
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   background: transparent;
-  color: var(--text-secondary);
+  color: var(--text-primary);
   cursor: pointer;
   transition:
     background-color $transition-fast,
-    color $transition-fast;
+    color $transition-fast,
+    transform 0.1s;
 
   &:hover:not(:disabled) {
     background: var(--bg-tertiary);
-    color: var(--text-primary);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.95);
   }
 
   &:disabled {
-    opacity: 0.5;
+    opacity: 0.45;
     cursor: not-allowed;
   }
 
   &:focus-visible {
-    outline: 2px solid var(--primary-color);
-    outline-offset: -1px;
+    outline: 2px solid var(--text-primary);
+    outline-offset: 1px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+
+    &:active:not(:disabled) {
+      transform: none;
+    }
   }
 }
 
@@ -248,7 +261,6 @@
   color: var(--destructive-color);
 
   &:hover:not(:disabled) {
-    background: var(--destructive-10);
     color: var(--destructive-color);
   }
 }

@@ -25,6 +25,12 @@
   }
 }
 
+// Dark theme: the brand panel joins the page surface with a divider instead of pure black.
+:global([data-theme='dark']) .brandPanel {
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border-color);
+}
+
 // 品牌文字容器
 .brandContent {
   position: relative;
@@ -52,7 +58,7 @@
 // 品牌大字
 .brandWord {
   font-size: 14vw;
-  font-weight: 900;
+  font-weight: 700;
   color: rgba(255, 255, 255, 0.9);
   letter-spacing: -0.02em;
   line-height: 0.85;
@@ -114,8 +120,8 @@
   height: 80px;
   border-radius: $radius-lg;
   object-fit: cover;
-  box-shadow: var(--shadow-lg);
-  border: 3px solid var(--border-color);
+  box-shadow: none;
+  border: 1px solid var(--border-color);
 }
 
 // 登录表单卡片
@@ -124,7 +130,7 @@
   background: var(--bg-primary);
   border: 1px solid var(--border-color);
   border-radius: $radius-lg;
-  box-shadow: var(--shadow-lg);
+  box-shadow: none;
   padding: $spacing-xl;
   display: flex;
   flex-direction: column;
@@ -158,14 +164,15 @@
 // 标题
 .title {
   font-size: 22px;
-  font-weight: 800;
+  font-weight: 600;
+  letter-spacing: -0.01em;
   color: var(--text-primary);
 }
 
 // 副标题
 .subtitle {
   color: var(--text-secondary);
-  font-size: 14px;
+  font-size: 13px;
 }
 
 // 语言下拉选择
@@ -177,7 +184,7 @@
 // 连接信息框
 .connectionBox {
   background: var(--bg-secondary);
-  border: 1px dashed var(--border-color);
+  border: 1px solid var(--border-color);
   border-radius: $radius-md;
   padding: $spacing-md;
   display: flex;
@@ -186,11 +193,13 @@
 
   .label {
     color: var(--text-secondary);
-    font-size: 14px;
+    font-size: 12px;
   }
 
   .value {
-    font-weight: 700;
+    font-family: $font-mono;
+    font-size: 13px;
+    font-weight: 500;
     color: var(--text-primary);
     word-break: break-all;
   }
@@ -216,11 +225,11 @@
 
 // 错误提示框
 .errorBox {
-  background: rgba($error-color, 0.1);
-  border: 1px solid rgba($error-color, 0.4);
+  background: var(--bg-error-light);
+  border: 1px solid color-mix(in srgb, var(--error-color) 36%, transparent);
   border-radius: $radius-md;
   padding: $spacing-sm $spacing-md;
-  color: $error-color;
+  color: var(--error-color);
   font-size: 14px;
 }
 
@@ -282,14 +291,14 @@
   height: 80px;
   width: auto;
   border-radius: $radius-lg;
-  box-shadow: $shadow-lg;
+  box-shadow: none;
   animation: splashLogoPulse 1.5s ease-in-out infinite;
 }
 
 // 启动动画标题
 .splashTitle {
   font-size: 28px;
-  font-weight: 800;
+  font-weight: 600;
   color: var(--text-primary);
   margin: 0;
   letter-spacing: -0.5px;
@@ -297,7 +306,7 @@
 
 // 启动动画副标题
 .splashSubtitle {
-  font-size: 16px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--text-secondary);
   margin: 0;
@@ -321,4 +330,17 @@
   background: var(--primary-color);
   border-radius: $radius-full;
   animation: splashLoading 1.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brandWord {
+    animation: none;
+    opacity: var(--target-opacity, 0.9);
+  }
+
+  .splashContent,
+  .splashLogo,
+  .splashLoaderBar {
+    animation: none;
+  }
 }

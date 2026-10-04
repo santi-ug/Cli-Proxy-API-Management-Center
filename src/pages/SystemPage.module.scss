@@ -4,9 +4,17 @@
 
 .pageTitle {
   font-size: 28px;
-  font-weight: 700;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
   color: var(--text-primary);
-  margin: 0 0 $spacing-xl 0;
+  margin: 0 0 $spacing-lg 0;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-color);
+
+  @media (max-width: 768px) {
+    font-size: 22px;
+  }
 }
 
 .content {
@@ -32,18 +40,18 @@
 .aboutLogo {
   width: 108px;
   height: 108px;
-  border-radius: 26px;
+  border-radius: 22px;
   object-fit: cover;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16);
+  box-shadow: none;
 }
 
 .aboutTitle {
   width: min(100%, 920px);
-  font-size: clamp(28px, 4.2vw, 44px);
-  font-weight: 800;
-  line-height: 1.12;
+  font-size: clamp(24px, 3.2vw, 32px);
+  font-weight: 600;
+  line-height: 1.15;
   color: var(--text-primary);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
   text-align: center;
   text-wrap: balance;
   white-space: normal;
@@ -68,35 +76,34 @@
   padding: $spacing-md $spacing-lg;
   border-radius: $radius-lg;
   border: 1px solid var(--border-color);
-  background: color-mix(in srgb, var(--bg-secondary) 82%, transparent);
+  background: var(--bg-secondary);
   text-align: left;
 }
 
 .tapTile {
   border: 1px solid var(--border-color);
-  background: color-mix(in srgb, var(--bg-secondary) 82%, transparent);
+  background: var(--bg-secondary);
   color: inherit;
   padding: $spacing-md $spacing-lg;
   cursor: pointer;
   transition:
-    transform 0.18s ease,
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
+    background-color 0.15s ease,
+    border-color 0.15s ease;
 
   &:hover {
-    transform: translateY(-1px);
-    border-color: var(--primary-color);
-    box-shadow: 0 8px 18px rgba($primary-color, 0.18);
+    border-color: var(--border-hover);
+    background: var(--bg-tertiary);
   }
 
-  &:active {
-    transform: translateY(0);
+  &:focus-visible {
+    outline: 2px solid var(--text-primary);
+    outline-offset: 2px;
   }
 }
 
 .tileLabel {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 500;
   color: var(--text-secondary);
 }
 
@@ -116,7 +123,8 @@
 
 .tileValue {
   font-size: 22px;
-  font-weight: 700;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
   color: var(--text-primary);
   line-height: 1.25;
   word-break: break-word;
@@ -135,14 +143,14 @@
 }
 
 .sectionTitle {
-  font-size: 20px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--text-primary);
   margin: 0 0 $spacing-md 0;
 }
 
 .sectionDescription {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text-secondary);
   margin: 0 0 $spacing-md 0;
 }
@@ -219,10 +227,10 @@
   display: inline-flex;
   align-items: center;
   gap: $spacing-xs;
-  padding: 4px 10px;
-  border-radius: $radius-full;
+  padding: 3px 9px;
+  border-radius: 6px;
   border: 1px solid var(--border-color);
-  background-color: var(--bg-secondary);
+  background-color: transparent;
   font-family:
     ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
     monospace;
@@ -230,7 +238,7 @@
 
 .modelName {
   color: var(--text-primary);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .modelAlias {
@@ -285,17 +293,18 @@
   border-radius: $radius-lg;
   text-decoration: none;
   color: inherit;
-  transition: all 0.2s ease;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
 
   &:hover {
-    background-color: var(--bg-hover);
-    border-color: var(--primary-color);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    background-color: var(--bg-tertiary);
+    border-color: var(--border-hover);
   }
 
-  &:active {
-    transform: translateY(0);
+  &:focus-visible {
+    outline: 2px solid var(--text-primary);
+    outline-offset: 2px;
   }
 }
 
@@ -306,13 +315,14 @@
   width: 44px;
   height: 44px;
   border-radius: $radius-md;
-  background-color: #24292f;
-  color: white;
+  border: 1px solid var(--border-color);
+  background-color: transparent;
+  color: var(--text-primary);
   flex-shrink: 0;
 
   &.github,
   &.docs {
-    background-color: #24292f;
+    color: var(--text-primary);
   }
 }
 
@@ -348,13 +358,13 @@
   .aboutLogo {
     width: 92px;
     height: 92px;
-    border-radius: 22px;
+    border-radius: 20px;
   }
 
   .aboutTitle {
     width: min(100%, 24ch);
-    font-size: clamp(22px, 6.6vw, 34px);
-    font-weight: 700;
+    font-size: clamp(22px, 6.6vw, 28px);
+    font-weight: 600;
     line-height: 1.18;
     letter-spacing: -0.012em;
   }

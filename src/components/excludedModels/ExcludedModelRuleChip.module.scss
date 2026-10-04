@@ -11,8 +11,8 @@
   gap: 4px;
   min-width: 0;
   max-width: 100%;
-  padding: 4px 5px 4px 9px;
-  border-radius: $radius-full;
+  padding: 2px 4px 2px 8px;
+  border-radius: 6px;
   color: var(--text-primary);
   font-family: $font-mono;
   font-size: 11px;
@@ -31,15 +31,15 @@
   font-size: 10px;
 }
 
-/* 显式勾选：实线 + primary 染色，读起来是「我选的」。 */
+/* Explicit pick: solid border, reads as "I chose this". */
 .exact {
-  border: 1px solid color-mix(in srgb, var(--primary-color) 45%, var(--border-color));
-  background: color-mix(in srgb, var(--primary-color) 8%, var(--bg-primary));
+  border: 1px solid var(--border-hover);
+  background: transparent;
 }
 
-/* 规则派生：虚线 = 「不是逐个挑的，是某条规则算出来的」。 */
+/* Rule-derived: dashed border, "a rule produced this, not a pick". */
 .wildcard {
-  border: 1px dashed color-mix(in srgb, var(--primary-color) 38%, var(--border-color));
+  border: 1px dashed var(--border-hover);
   background: transparent;
   color: var(--text-secondary);
 }
@@ -60,7 +60,7 @@
   height: 20px;
   padding: 0;
   border: 0;
-  border-radius: 50%;
+  border-radius: 4px;
   background: transparent;
   color: var(--text-tertiary);
   cursor: pointer;
@@ -74,7 +74,7 @@
   }
 
   &:focus-visible {
-    outline: 2px solid var(--primary-color);
+    outline: 2px solid var(--text-primary);
     outline-offset: 1px;
   }
 

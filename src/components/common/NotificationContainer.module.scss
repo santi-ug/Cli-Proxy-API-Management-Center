@@ -34,7 +34,7 @@
   border: 1px solid var(--border-color);
   border-radius: $radius-lg;
   background: var(--floating-surface);
-  box-shadow: var(--shadow-lg), var(--shadow);
+  box-shadow: var(--floating-shadow);
   color: var(--text-primary);
   pointer-events: auto;
   opacity: 1;

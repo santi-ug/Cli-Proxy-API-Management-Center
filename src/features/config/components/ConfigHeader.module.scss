@@ -1,10 +1,10 @@
 @use '../../../styles/mixins' as *;
 
-/* 配置面板头部：与凭证库/额度页同语汇（紧排标题 / ▍mono 遥测 / ghost 次按钮） */
+/* 配置面板头部：与账号池页同语汇（28px 标题 / 13px 静音副标题 / ghost 次按钮） */
 
 .header {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
   gap: 16px 24px;
   flex-wrap: wrap;
@@ -19,10 +19,10 @@
 
 .title {
   margin: 0;
-  font-size: clamp(26px, 3.2vw, 30px);
+  font-size: 28px;
   line-height: 1.15;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-weight: 600;
+  letter-spacing: -0.01em;
   color: var(--text-primary);
 }
 
@@ -31,27 +31,15 @@
   display: flex;
   align-items: baseline;
   flex-wrap: wrap;
-  gap: 4px 8px;
-  font-family: $font-mono;
+  gap: 4px 6px;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 400;
   font-variant-numeric: tabular-nums;
-  letter-spacing: 0.02em;
   color: var(--text-secondary);
-
-  /* 终端游标：全站页头 meta 行的结构记号 */
-  &::before {
-    content: '▍';
-    color: var(--viz-success);
-    font-size: 13px;
-    line-height: 1;
-    align-self: center;
-    margin-right: 1px;
-  }
 }
 
 .metaDot {
-  color: var(--text-quaternary);
+  color: var(--text-tertiary);
   user-select: none;
 }
 
@@ -68,7 +56,8 @@
 }
 
 .metaOk {
-  color: var(--viz-success);
+  color: var(--text-primary);
+  font-weight: 500;
 }
 
 /* ---------- 动作区 ---------- */
@@ -89,10 +78,10 @@
   cursor: pointer;
   background: none;
   color: var(--text-secondary);
-  border-radius: $radius-full;
-  padding: 10px 14px;
+  border-radius: $radius-md;
+  padding: 9px 10px;
   font-size: 13px;
-  font-weight: 550;
+  font-weight: 500;
   line-height: 1;
   transition:
     color var(--dur-hover, 200ms) var(--ease-out-strong, ease-out),
@@ -108,7 +97,7 @@
   }
 
   &:focus-visible {
-    outline: 2px solid var(--primary-color);
+    outline: 2px solid var(--text-primary);
     outline-offset: 2px;
   }
 }
@@ -130,13 +119,11 @@
 }
 
 @include mobile {
-  .header {
-    align-items: stretch;
-    flex-direction: column;
+  .title {
+    font-size: 22px;
   }
 
   .actions {
-    justify-content: flex-start;
     flex-wrap: wrap;
   }
 }

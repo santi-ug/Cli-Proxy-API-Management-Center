@@ -38,8 +38,7 @@
 
   &:focus-visible {
     outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba($primary-color, 0.18);
+    border-color: var(--text-secondary);
   }
 
   &:disabled {
@@ -48,8 +47,8 @@
   }
 
   @media (hover: hover) and (pointer: fine) {
-    &:hover:not(:disabled) {
-      border-color: color-mix(in srgb, var(--primary-color) 40%, var(--border-color));
+    &:hover:not(:disabled):not(:focus-visible) {
+      border-color: var(--border-hover);
     }
   }
 }
@@ -93,7 +92,7 @@
 .meterFill {
   display: block;
   height: 100%;
-  background: color-mix(in srgb, var(--primary-color) 70%, var(--text-primary));
+  background: var(--text-secondary);
   transition: width 360ms var(--ease-out-strong, ease);
 }
 
@@ -170,7 +169,7 @@
   width: 100%;
   padding: 6px 10px 6px 32px;
   border: 1px solid var(--border-color);
-  border-radius: $radius-sm;
+  border-radius: 6px;
   background: var(--bg-primary);
   color: var(--text-primary);
   font-size: 12px;
@@ -181,8 +180,7 @@
 
   &:focus {
     outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba($primary-color, 0.18);
+    border-color: var(--text-secondary);
   }
 }
 
@@ -210,7 +208,7 @@
   transition: background-color var(--dur-press, 160ms) var(--ease-out-strong, ease-out);
 
   &:focus-visible {
-    outline: 2px solid var(--primary-color);
+    outline: 2px solid var(--text-primary);
     outline-offset: -2px;
   }
 }
@@ -222,7 +220,7 @@
 .rowExcluded .checkbox {
   border-color: var(--primary-color);
   background: var(--primary-color);
-  color: var(--bg-primary);
+  color: var(--primary-contrast);
 }
 
 /* 纯规则命中：压暗且不可切换，但仍可聚焦、仍会朗读原因。 */
@@ -274,11 +272,11 @@
 
 .badge {
   flex-shrink: 0;
-  padding: 2px 6px;
-  border: 1px dashed color-mix(in srgb, var(--primary-color) 38%, var(--border-color));
-  border-radius: $radius-full;
+  padding: 1px 6px;
+  border: 1px dashed var(--border-hover);
+  border-radius: 6px;
   color: var(--text-secondary);
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .badgeMuted {
@@ -338,7 +336,7 @@
   }
 
   &:focus-visible {
-    outline: 2px solid var(--primary-color);
+    outline: 2px solid var(--text-primary);
     outline-offset: 1px;
   }
 
@@ -377,15 +375,28 @@
   flex-shrink: 0;
   padding: 4px 10px;
   border: 1px solid var(--border-color);
-  border-radius: $radius-sm;
-  background: var(--bg-primary);
+  border-radius: 6px;
+  background: transparent;
   color: var(--text-primary);
   font-size: 11px;
   cursor: pointer;
-  transition: transform var(--dur-press, 160ms) var(--ease-out-strong, ease-out);
+  transition:
+    background-color var(--dur-hover, 200ms) var(--ease-out-strong, ease-out),
+    transform var(--dur-press, 160ms) var(--ease-out-strong, ease-out);
 
   &:active {
     transform: scale(0.96);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--text-primary);
+    outline-offset: 2px;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      background: var(--bg-tertiary);
+    }
   }
 }
 

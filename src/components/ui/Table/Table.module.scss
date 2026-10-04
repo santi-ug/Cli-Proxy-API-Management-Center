@@ -3,7 +3,7 @@
 
 .wrap {
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
+  border-radius: $radius-lg;
   overflow: hidden;
   background: var(--bg-primary);
 }
@@ -21,7 +21,7 @@
 }
 
 .head {
-  background: var(--muted-bg);
+  background: transparent;
 
   th {
     color: var(--muted-foreground);

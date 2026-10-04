@@ -17,8 +17,7 @@ interface MeterProps {
 }
 
 /**
- * 细条计量器：填充色承载严重度，轨道是同色淡化步阶，
- * 因此在整条上都能读出状态。
+ * 细条计量器：填充色承载严重度，轨道保持中性（与 Account pools 同款）。
  */
 export function Meter({ value, tone, ariaLabel, className }: MeterProps) {
   const resolvedTone = tone ?? toneForSuccessRate(value);

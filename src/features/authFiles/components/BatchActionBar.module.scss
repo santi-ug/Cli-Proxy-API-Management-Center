@@ -1,6 +1,6 @@
 @use '../../../styles/mixins' as *;
 
-/* 悬浮批量操作条：底部居中的玻璃工具栏（--content-center-x 对齐内容列中心） */
+/* Floating batch bar, centered on the content column (--content-center-x). Flat surface, no glass. */
 
 .container {
   position: fixed;
@@ -20,12 +20,10 @@
   flex-wrap: wrap;
   gap: 8px 16px;
   padding: 10px 14px;
-  border-radius: 16px;
-  --glass-blur: 14px;
-  border: 1px solid var(--glass-border);
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-backdrop-filter);
-  box-shadow: var(--shadow-lg);
+  border-radius: $radius-lg;
+  border: 1px solid var(--border-color);
+  background: var(--floating-surface, var(--bg-primary));
+  box-shadow: var(--floating-shadow);
 }
 
 .left,
@@ -37,9 +35,8 @@
 }
 
 .count {
-  font-family: $font-mono;
-  font-size: 12px;
-  font-weight: 650;
+  font-size: 13px;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
   color: var(--text-primary);
   padding-right: 4px;

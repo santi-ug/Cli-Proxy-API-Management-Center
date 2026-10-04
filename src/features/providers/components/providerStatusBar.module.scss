@@ -57,7 +57,7 @@
   font-size: 12px;
   line-height: 1.5;
   white-space: nowrap;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--floating-shadow);
   z-index: $z-dropdown;
   pointer-events: none;
   color: var(--text-primary);
@@ -120,11 +120,11 @@
 }
 
 .tooltipSuccess {
-  color: var(--success-color, #22c55e);
+  color: var(--viz-success);
 }
 
 .tooltipFailure {
-  color: var(--danger-color, #ef4444);
+  color: var(--viz-failure);
 }
 
 .tooltipRate {
@@ -140,24 +140,34 @@
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: var(--bg-tertiary);
+  padding: 1px 6px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: transparent;
   color: var(--text-secondary);
   font-variant-numeric: tabular-nums;
 }
 
 .statusRateHigh {
-  color: var(--success-badge-text, #065f46);
-  background: var(--success-badge-bg, #d1fae5);
+  color: var(--success-badge-text);
+  background: var(--success-badge-bg);
+  border-color: var(--success-badge-border);
 }
 
 .statusRateMedium {
-  color: var(--warning-text, #92400e);
-  background: var(--warning-bg, #fef3c7);
+  color: var(--warning-text);
+  background: var(--warning-bg);
+  border-color: var(--warning-border);
 }
 
 .statusRateLow {
   color: var(--failure-badge-text);
   background: var(--failure-badge-bg);
+  border-color: var(--failure-badge-border);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .statusBlock {
+    transition: none;
+  }
 }

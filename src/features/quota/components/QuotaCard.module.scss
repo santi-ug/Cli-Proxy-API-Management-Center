@@ -1,31 +1,40 @@
 @use '../../../styles/mixins' as *;
 
 /* ============================================================
- * 额度卡片 — 继承凭证卡 statTile 配方（14px 圆角 / 1px 边框 / 82% 透感纸面）。
- * 提供商身份只由图标承载（混合网格下五色渐变卡底会互相打架，已退役）。
- * 遥测内容一律 mono + tabular-nums。
+ * 额度卡片：与 Account pools 卡片同款（10px 圆角 / 1px 边框 / 实底，无投影）。
+ * 提供商身份由图标承载；水位条高水位色由 data-provider 注入 --quota-accent，
+ * 只有 Claude / Codex / Grok 有提供商色，其余保持中性。
  * ============================================================ */
 
 .card {
+  --quota-accent: var(--viz-success);
+
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 11px;
-  padding: 15px 16px;
-  border-radius: 14px;
+  gap: 12px;
+  padding: 16px;
+  border-radius: $radius-lg;
   border: 1px solid var(--border-color);
-  background: color-mix(in srgb, var(--bg-primary) 82%, transparent);
-  transition:
-    transform var(--dur-hover, 200ms) var(--ease-out-strong, ease-out),
-    border-color var(--dur-hover, 200ms) var(--ease-out-strong, ease-out),
-    box-shadow var(--dur-hover, 200ms) var(--ease-out-strong, ease-out);
+  background: var(--bg-primary);
+  transition: border-color var(--dur-hover, 200ms) var(--ease-out-strong, ease-out);
+
+  &[data-provider='claude'] {
+    --quota-accent: var(--accent-claude);
+  }
+
+  &[data-provider='codex'] {
+    --quota-accent: var(--accent-codex);
+  }
+
+  &[data-provider='xai'] {
+    --quota-accent: var(--accent-grok);
+  }
 }
 
 @media (hover: hover) and (pointer: fine) {
   .card:hover {
-    transform: translateY(-2px);
     border-color: var(--border-hover);
-    box-shadow: 0 12px 26px -14px rgb(0 0 0 / 0.16);
   }
 }
 
@@ -58,8 +67,8 @@
   justify-content: center;
   width: 26px;
   height: 26px;
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--bg-tertiary) 60%, transparent);
+  border-radius: 6px;
+  background: var(--bg-tertiary);
 }
 
 .icon {
@@ -71,7 +80,7 @@
 
 .iconFallback {
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--text-secondary);
 }
 
@@ -107,12 +116,13 @@
   padding: 12px 10px;
   cursor: pointer;
   border: 1px dashed var(--border-color);
-  border-radius: 10px;
+  border-radius: $radius-md;
   background: none;
-  color: var(--text-tertiary);
+  color: var(--text-secondary);
   transition:
     transform var(--dur-press, 160ms) var(--ease-out-strong, ease-out),
     border-color var(--dur-hover, 200ms) var(--ease-out-strong, ease-out),
+    background-color var(--dur-hover, 200ms) var(--ease-out-strong, ease-out),
     color var(--dur-hover, 200ms) var(--ease-out-strong, ease-out);
 
   &:disabled {
@@ -125,16 +135,17 @@
   }
 
   &:focus-visible {
-    outline: 2px solid var(--primary-color);
+    outline: 2px solid var(--text-primary);
     outline-offset: 2px;
   }
 }
 
 @media (hover: hover) and (pointer: fine) {
   .idleBody:hover:not(:disabled) {
-    border-color: color-mix(in srgb, var(--primary-color) 35%, var(--border-color));
+    border-color: var(--border-hover);
     border-style: solid;
-    color: var(--text-secondary);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
   }
 }
 
@@ -144,8 +155,7 @@
 }
 
 .idleHint {
-  font-family: $font-mono;
-  font-size: 11.5px;
+  font-size: 12px;
   line-height: 1.5;
   text-align: center;
 }
@@ -165,29 +175,22 @@
   gap: 6px;
 }
 
-/* 骨架：底色 + 一道 1.2s 匀速扫光（linear —— 环境性匀速运动的唯一例外） */
+/* 骨架：与共享 Skeleton 同款，实底 + 透明度呼吸，不做扫光渐变 */
 .skeletonLabel,
 .skeletonTrack {
   display: block;
-  border-radius: $radius-full;
-  background-color: color-mix(in srgb, var(--text-primary) 8%, transparent);
-  background-image: linear-gradient(
-    90deg,
-    transparent 20%,
-    color-mix(in srgb, var(--text-primary) 6%, transparent) 50%,
-    transparent 80%
-  );
-  background-repeat: no-repeat;
-  background-size: 220% 100%;
-  animation: quota-skeleton-sweep 1.2s linear infinite;
+  border-radius: 2px;
+  background-color: var(--bg-tertiary);
+  animation: quota-skeleton-pulse 1.4s ease-in-out infinite;
 }
 
-@keyframes quota-skeleton-sweep {
-  from {
-    background-position: -110% 0;
+@keyframes quota-skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
   }
-  to {
-    background-position: 210% 0;
+  50% {
+    opacity: 0.55;
   }
 }
 
@@ -198,7 +201,7 @@
 
 .skeletonTrack {
   width: 100%;
-  height: 6px;
+  height: 4px;
 }
 
 .srOnly {
@@ -221,7 +224,7 @@
   color: var(--viz-failure);
   background: color-mix(in srgb, var(--viz-failure) 8%, transparent);
   border: 1px solid color-mix(in srgb, var(--viz-failure) 32%, transparent);
-  border-radius: 9px;
+  border-radius: $radius-md;
   padding: 8px 10px;
   overflow-wrap: anywhere;
 }
@@ -231,29 +234,27 @@
 .actionRow {
   display: flex;
   justify-content: flex-end;
-  gap: 6px;
+  gap: 4px 14px;
   flex-wrap: wrap;
 }
 
-/* 安静描边药丸（与凭证卡图标动作同族：hover 才显色块） */
+/* 安静文字动作（与 Account pools 的 Use a reset / Refresh quota 同族） */
 .actionPill {
   display: inline-flex;
   align-items: center;
   gap: 5px;
   cursor: pointer;
-  border: 1px solid var(--border-color);
-  border-radius: $radius-full;
+  border: 0;
+  border-radius: 6px;
   background: none;
-  padding: 5px 11px;
-  font-size: 11.5px;
-  font-weight: 600;
+  padding: 4px 2px;
+  font-size: 12px;
+  font-weight: 400;
   line-height: 1.4;
   color: var(--text-secondary);
   white-space: nowrap;
   transition:
     transform var(--dur-press, 160ms) var(--ease-out-strong, ease-out),
-    border-color var(--dur-hover, 200ms) var(--ease-out-strong, ease-out),
-    background-color var(--dur-hover, 200ms) var(--ease-out-strong, ease-out),
     color var(--dur-hover, 200ms) var(--ease-out-strong, ease-out);
 
   &:disabled {
@@ -266,15 +267,13 @@
   }
 
   &:focus-visible {
-    outline: 2px solid var(--primary-color);
+    outline: 2px solid var(--text-primary);
     outline-offset: 2px;
   }
 }
 
 @media (hover: hover) and (pointer: fine) {
   .actionPill:hover:not(:disabled) {
-    border-color: var(--border-hover);
-    background: color-mix(in srgb, var(--bg-tertiary) 55%, transparent);
     color: var(--text-primary);
   }
 }

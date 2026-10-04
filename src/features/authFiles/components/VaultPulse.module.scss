@@ -20,10 +20,9 @@
   flex: 1;
   min-width: 0;
   height: 100%;
-  /* 基线 + 两端渐隐：与 LiveWire 的水平 mask 同语汇 */
+  /* Flat baseline, no edge fade. */
   padding-bottom: 3px;
-  border-bottom: 1px solid color-mix(in srgb, var(--border-color) 85%, transparent);
-  mask-image: linear-gradient(to right, transparent, #000 2%, #000 98%, transparent);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .bar {
@@ -50,12 +49,12 @@
 
 .barIdle {
   height: 42%;
-  background: color-mix(in srgb, var(--text-quaternary) 55%, transparent);
+  background: var(--border-hover);
 }
 
 .barWarning {
   height: 72%;
-  background: var(--amber-color);
+  background: var(--warning-color);
 }
 
 .barProblem {
@@ -70,9 +69,8 @@
 
 .overflow {
   flex-shrink: 0;
-  font-family: $font-mono;
   font-size: 11px;
-  font-weight: 650;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
   color: var(--text-tertiary);
   line-height: 1;
@@ -83,8 +81,7 @@
 .idleLine {
   flex: 1;
   height: 0;
-  border-bottom: 2px dashed var(--text-quaternary);
-  opacity: 0.6;
+  border-bottom: 1px dashed var(--border-hover);
   margin-bottom: 6px;
 }
 

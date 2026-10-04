@@ -4,8 +4,7 @@
 .panel {
   background: var(--bg-primary);
   border: 1px solid var(--border-color);
-  border-radius: 12px;
-  box-shadow: var(--shadow);
+  border-radius: $radius-lg;
   padding: 20px;
   min-width: 0;
   display: flex;
@@ -42,12 +41,11 @@
     color $transition-fast;
 
   &:hover {
-    background: var(--bg-hover);
     color: var(--text-primary);
   }
 
   &:focus-visible {
-    outline: 2px solid var(--primary-color);
+    outline: 2px solid var(--text-primary);
     outline-offset: 2px;
   }
 
@@ -64,12 +62,14 @@
   min-width: 0;
 }
 
+// Sponsor mark, kept monochrome so it does not outshout the page.
 .logo {
-  width: 30px;
-  height: 30px;
+  width: 26px;
+  height: 26px;
   border-radius: var(--radius-md);
   object-fit: contain;
   flex-shrink: 0;
+  filter: grayscale(1);
 }
 
 .titleText {
@@ -82,10 +82,10 @@
 .title {
   margin: 0;
   color: var(--text-primary);
-  font-size: 24px;
-  font-weight: 700;
-  line-height: 1.22;
-  letter-spacing: 0;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.005em;
 }
 
 .footer {
@@ -96,13 +96,12 @@
   padding-top: 4px;
 }
 
+// Empty state like the pools page: no box, just quiet centered copy.
 .empty {
-  border: 1px dashed var(--border-color);
-  border-radius: var(--radius-md);
-  padding: 32px;
+  padding: 32px 16px;
   text-align: center;
-  color: var(--muted-foreground);
-  font-size: 14px;
+  color: var(--text-secondary);
+  font-size: 13px;
 }
 
 .emptyActions {
@@ -118,35 +117,42 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 7px 13px;
-  border: 1px solid var(--border-color);
+  padding: 8px 13px;
+  border: 1px solid transparent;
   border-radius: var(--radius-md);
-  background: var(--bg-primary);
+  background: transparent;
   color: var(--text-primary);
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
-  line-height: 1.4;
+  line-height: 1.25;
   text-decoration: none;
   transition:
-    background 0.16s ease,
-    border-color 0.16s ease,
-    color 0.16s ease,
-    box-shadow 0.16s ease;
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.1s;
 
-  &:hover {
-    border-color: var(--border-hover);
-    background: var(--bg-hover);
+  &:active:not(:disabled) {
+    transform: scale(0.97);
   }
 
   &:focus-visible {
-    outline: 2px solid var(--primary-color);
+    outline: 2px solid var(--text-primary);
     outline-offset: 2px;
   }
 
   &:disabled {
     cursor: not-allowed;
-    opacity: 0.6;
+    opacity: 0.45;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+
+    &:active:not(:disabled) {
+      transform: none;
+    }
   }
 }
 
@@ -154,40 +160,27 @@
   border-color: var(--primary-color);
   background: var(--primary-color);
   color: var(--primary-contrast);
-  font-weight: 600;
 
   &:hover:not(:disabled) {
     border-color: var(--primary-hover);
     background: var(--primary-hover);
   }
-
-  &:focus-visible {
-    outline-color: var(--primary-color);
-  }
 }
 
+// Sponsor registration: a quiet text link next to the primary action.
 .emptyActionButtonEmphasis {
-  color: var(--amber-text);
-  border-color: color-mix(in srgb, var(--amber-color) 48%, var(--border-color));
-  background: color-mix(in srgb, var(--amber-color) 14%, var(--bg-primary));
-  font-weight: 600;
-  box-shadow: 0 1px 0 color-mix(in srgb, var(--amber-color) 18%, transparent);
+  padding-inline: 8px;
+  color: var(--text-secondary);
 
   &:hover {
-    border-color: color-mix(in srgb, var(--amber-color) 72%, var(--border-color));
-    background: color-mix(in srgb, var(--amber-color) 20%, var(--bg-primary));
-    box-shadow: 0 4px 12px color-mix(in srgb, var(--amber-color) 18%, transparent);
-  }
-
-  &:focus-visible {
-    outline-color: var(--amber-color);
+    color: var(--text-primary);
   }
 }
 
 .primaryAction {
-  height: 38px;
-  font-size: 14px;
-  font-weight: 600;
+  height: 34px;
+  font-size: 13px;
+  font-weight: 500;
   line-height: 1;
 }
 
@@ -211,8 +204,7 @@
   }
 
   .title {
-    font-size: 22px;
-    line-height: 1.25;
+    font-size: 20px;
   }
 
   .titleRow {
