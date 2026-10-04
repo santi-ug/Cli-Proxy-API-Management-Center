@@ -94,7 +94,7 @@ describe('maskEmail', () => {
 });
 
 describe('percentTone', () => {
-  test('green from 60% left, yellow from 25%, red below', () => {
+  test('healthy from 60% left, yellow from 25%, red below', () => {
     expect(percentTone(100)).toBe('good');
     expect(percentTone(60)).toBe('good');
     expect(percentTone(59)).toBe('mid');

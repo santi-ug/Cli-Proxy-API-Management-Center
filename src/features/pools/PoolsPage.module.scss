@@ -19,10 +19,10 @@
   --pool-track: #1d1d20;
   --pool-hover: #111113;
   --pool-card: #111113;
-  --pool-good: #5bd68a;
+  --pool-good: var(--pool-fg);
   --pool-mid: #f5c84c;
   --pool-low: #ff6b6b;
-  --pool-on: #5bd68a;
+  --pool-on: var(--pool-fg);
   --pool-accent: var(--pool-muted);
 
   max-width: 1280px;

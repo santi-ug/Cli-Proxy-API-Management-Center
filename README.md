@@ -9,6 +9,7 @@
 Fleet Proxy is Santi's account-pool dashboard, based on CLI Proxy API Management Center.<br>
 Auto follows the router; On enables an account behind the primary; Off disables it immediately.
 If a switch response is lost, refresh to check its saved state.
+Healthy quota values and ready/serving dots are white; warnings stay yellow and depleted quotas red.
 Manage providers, credentials, quotas, and logs — from a single HTML file.
 
 [![Backend: v8](https://img.shields.io/badge/Backend-v8-5865F2?style=flat-square)](https://github.com/router-for-me/CLIProxyAPI)
