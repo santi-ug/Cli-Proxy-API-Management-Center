@@ -1,0 +1,749 @@
+// Account pools. Always dark, matching the approved "D · Final" mock
+// (writeups/proxy-dashboard-directions.html). Layout follows the frame width
+// through container queries: rows in Full from 700px (stacked below 1100px),
+// cards below 700px and in Compact at any width.
+
+.frame {
+  container-type: inline-size;
+  flex: 1 0 auto;
+  min-height: 100%;
+  background: #0b0b0c;
+  color-scheme: dark;
+}
+
+.page {
+  --pool-line: #232326;
+  --pool-fg: #f1f1f1;
+  --pool-muted: #8e8e93;
+  --pool-dim: #5f5f66;
+  --pool-track: #1d1d20;
+  --pool-hover: #111113;
+  --pool-card: #111113;
+  --pool-good: #5bd68a;
+  --pool-mid: #f5c84c;
+  --pool-low: #ff6b6b;
+  --pool-on: #5bd68a;
+  --pool-accent: var(--pool-muted);
+
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 22px 32px 32px;
+  color: var(--pool-fg);
+  font-size: 13px;
+  line-height: 1.5;
+
+  button:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+  }
+}
+
+// ---------------------------------------------------------------- header
+
+.hd {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--pool-line);
+}
+
+.hl {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+.hr {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  color: var(--pool-muted);
+}
+
+.iconBtn {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--pool-line);
+  border-radius: 8px;
+  background: none;
+  color: var(--pool-fg);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    transform 0.1s;
+
+  &:hover {
+    background: #18181b;
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+.spinning svg {
+  animation: pool-spin 0.9s linear infinite;
+}
+
+@keyframes pool-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.view,
+.mode {
+  display: flex;
+  gap: 12px;
+
+  button {
+    padding: 2px 0;
+    border: 0;
+    border-bottom: 1px solid transparent;
+    background: none;
+    color: var(--pool-muted);
+    font: inherit;
+    cursor: pointer;
+    transition:
+      color 0.15s,
+      border-color 0.15s;
+
+    &:hover:not(:disabled),
+    &[aria-pressed='true'] {
+      color: var(--pool-fg);
+    }
+
+    &[aria-pressed='true'] {
+      border-bottom-color: var(--pool-fg);
+    }
+
+    &:disabled {
+      cursor: progress;
+    }
+  }
+}
+
+.status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--pool-line);
+  color: var(--pool-muted);
+
+  b {
+    color: var(--pool-fg);
+    font-weight: 600;
+  }
+}
+
+// ---------------------------------------------------------------- provider totals
+
+.provs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  border-bottom: 1px solid var(--pool-line);
+}
+
+.prov {
+  min-width: 0;
+  padding: 22px 28px 16px 0;
+
+  & + & {
+    padding-left: 28px;
+    border-left: 1px solid var(--pool-line);
+  }
+
+  &:last-child {
+    padding-right: 0;
+  }
+}
+
+.pname {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--pool-muted);
+
+  b {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    color: var(--pool-fg);
+    font-size: 15px;
+    font-weight: 600;
+  }
+}
+
+.tile {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  color: var(--pool-accent);
+}
+
+.pct {
+  margin-top: 20px;
+  color: var(--pool-accent);
+  font-size: 40px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+
+  small {
+    font-size: 18px;
+  }
+
+  span {
+    margin-left: 6px;
+    color: var(--pool-muted);
+    font-size: 13px;
+  }
+}
+
+// Before the first read: same height as the number, quiet text instead.
+.pctPending {
+  display: flex;
+  align-items: flex-end;
+  height: 40px;
+  color: var(--pool-dim);
+  font-size: 13px;
+}
+
+.wl {
+  margin: 10px 0 8px;
+  color: var(--pool-muted);
+}
+
+.segs {
+  display: flex;
+  gap: 4px;
+}
+
+.seg {
+  flex: 1;
+  height: 5px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--pool-track);
+
+  i {
+    display: block;
+    height: 100%;
+    background: var(--pool-accent);
+  }
+}
+
+.subs {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.sub {
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  color: var(--pool-muted);
+
+  b {
+    color: var(--pool-fg);
+    font-weight: 500;
+  }
+}
+
+.pfoot {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--pool-line);
+  color: var(--pool-muted);
+
+  b {
+    color: var(--pool-fg);
+    font-weight: 500;
+  }
+}
+
+// ---------------------------------------------------------------- filters and sections
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin: 20px 0 0;
+  color: var(--pool-muted);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.chip {
+  padding: 7px 12px;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  color: var(--pool-muted);
+  font: inherit;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+
+  &:hover {
+    color: var(--pool-fg);
+  }
+
+  &[aria-pressed='true'] {
+    background: #f2f2f2;
+    color: #111;
+  }
+
+  i {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    margin-right: 7px;
+    border-radius: 50%;
+    background: var(--pool-accent);
+    vertical-align: 1px;
+  }
+}
+
+.sectionTitle {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 22px 0 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--pool-line);
+  color: var(--pool-muted);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+
+  i {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--pool-accent);
+  }
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 48px 0;
+  color: var(--pool-muted);
+
+  b {
+    color: var(--pool-fg);
+    font-size: 15px;
+    font-weight: 600;
+  }
+}
+
+// ---------------------------------------------------------------- account, row layout
+
+.acct {
+  display: grid;
+  grid-template-columns: minmax(190px, 1fr) minmax(0, 3.4fr) auto;
+  gap: 24px;
+  align-items: center;
+  margin: 0 -10px;
+  padding: 14px 10px;
+  border-bottom: 1px solid var(--pool-line);
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+
+  &:hover {
+    background: var(--pool-hover);
+  }
+}
+
+.ctop {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.glyph {
+  display: none;
+  flex: none;
+  color: var(--pool-accent);
+  line-height: 0;
+}
+
+.who {
+  min-width: 0;
+}
+
+// Name, plan and role wrap as whole words, never into the provider mark.
+.idLine {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 6px;
+  align-items: baseline;
+}
+
+.name {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.plan {
+  white-space: nowrap;
+  color: var(--pool-accent);
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.role {
+  white-space: nowrap;
+  color: var(--pool-muted);
+  font-size: 12px;
+
+  &::before {
+    content: '· ';
+  }
+}
+
+.mask {
+  margin-top: 1px;
+  color: var(--pool-dim);
+  font-family: $font-mono;
+  font-size: 12px;
+}
+
+.state {
+  margin-top: 4px;
+  color: var(--pool-muted);
+  font-size: 12px;
+
+  b {
+    color: var(--pool-fg);
+    font-weight: 500;
+  }
+}
+
+.dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 7px;
+  border-radius: 50%;
+  background: var(--pool-on);
+  vertical-align: 1px;
+  transition:
+    background 0.2s,
+    box-shadow 0.2s;
+}
+
+.dotOff {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--pool-muted);
+}
+
+.dotAlert {
+  background: var(--pool-low);
+}
+
+.ms {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.m {
+  min-width: 0;
+}
+
+.t {
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  color: var(--pool-muted);
+  font-size: 12px;
+
+  b {
+    color: var(--pool-fg);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .good {
+    color: var(--pool-good);
+  }
+
+  .mid {
+    color: var(--pool-mid);
+  }
+
+  .low {
+    color: var(--pool-low);
+  }
+}
+
+.track {
+  height: 4px;
+  margin: 7px 0 5px;
+  border-radius: 2px;
+  background: var(--pool-track);
+
+  i {
+    display: block;
+    height: 100%;
+    border-radius: 2px;
+    background: var(--pool-accent);
+  }
+}
+
+.r {
+  color: var(--pool-muted);
+  font-size: 12px;
+
+  b {
+    color: var(--pool-fg);
+    font-weight: 500;
+  }
+}
+
+.quotaError {
+  color: var(--pool-low);
+  font-size: 12px;
+}
+
+.none .t,
+.none .r,
+.placeholder .r {
+  color: var(--pool-dim);
+}
+
+.bank {
+  min-width: 0;
+}
+
+.foot {
+  display: none;
+}
+
+.ctl {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.acts {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  color: var(--pool-dim);
+  font-size: 12px;
+
+  button {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--pool-muted);
+    font: inherit;
+    cursor: pointer;
+    transition: color 0.15s;
+
+    &:hover:not(:disabled) {
+      color: var(--pool-fg);
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+  }
+}
+
+@container (width < 1100px) {
+  .acct {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .ctl {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+// ---------------------------------------------------------------- card layout
+
+@mixin cards {
+  .list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+    margin-top: 14px;
+  }
+
+  .acct {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    align-items: stretch;
+    margin: 0;
+    padding: 18px;
+    border: 1px solid var(--pool-line);
+    border-radius: 10px;
+    background: var(--pool-card);
+
+    &:hover {
+      border-color: #34343a;
+      background: var(--pool-card);
+    }
+  }
+
+  .glyph {
+    display: block;
+  }
+
+  .ms {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .foot {
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+    margin-top: auto;
+    padding-top: 12px;
+    border-top: 1px solid var(--pool-line);
+    color: var(--pool-muted);
+    font-size: 12px;
+
+    b {
+      display: block;
+      margin-top: 3px;
+      color: var(--pool-fg);
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    > div:last-child {
+      text-align: right;
+    }
+  }
+
+  .ctl {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .sectionTitle {
+    padding-bottom: 0;
+    border-bottom: 0;
+  }
+}
+
+.page[data-view='compact'] {
+  @include cards;
+}
+
+@container (width < 700px) {
+  .page {
+    padding: 18px 16px 26px;
+  }
+
+  .title {
+    font-size: 22px;
+  }
+
+  .prov,
+  .prov + .prov {
+    padding: 18px 0;
+    border-left: 0;
+  }
+
+  .prov + .prov {
+    border-top: 1px solid var(--pool-line);
+  }
+
+  .pct {
+    font-size: 34px;
+  }
+
+  .upd {
+    display: none;
+  }
+
+  @include cards;
+}
+
+// Compact: cards at any width. Keeps every 5-hour and weekly bar, drops the rest.
+.page[data-view='compact'] {
+  .mask,
+  .state,
+  .ctl,
+  .foot,
+  .bank,
+  .none {
+    display: none;
+  }
+
+  .list {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+  }
+
+  .acct {
+    gap: 10px;
+    padding: 14px 16px;
+  }
+
+  .ms {
+    gap: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page *,
+  .page *::before {
+    animation: none !important;
+    transition: none !important;
+  }
+}

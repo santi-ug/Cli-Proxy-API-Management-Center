@@ -13,3 +13,4 @@ export {
   commitIfQuotaCacheCurrent,
   useQuotaStore,
 } from './useQuotaStore';
+export { useDrawerStore } from './useDrawerStore';

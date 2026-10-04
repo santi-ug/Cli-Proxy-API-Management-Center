@@ -7,6 +7,9 @@ import {
   type AnthropicResetSettledCode,
 } from '@/services/api/claudeResetGrants';
 
+export const resetGrantAccountKey = (name: string, authIndex: string | null) =>
+  JSON.stringify([name, authIndex]);
+
 export const RETRY_WINDOW_MS = 10 * 60 * 1000;
 type Operation = {
   grantId: string;
@@ -30,6 +33,8 @@ const defaultDependencies = {
  */
 export function createResetGrantOperations(deps = defaultDependencies) {
   let revision = deps.revision();
+  let version = 0;
+  const listeners = new Set<() => void>();
   const operations = new Map<string, Operation>();
   const busy = new Set<string>();
   const syncSession = () => {
@@ -41,6 +46,13 @@ export function createResetGrantOperations(deps = defaultDependencies) {
     return revision;
   };
   return {
+    snapshot: () => version,
+    subscribe(listener: () => void) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
     inspect(key: string) {
       syncSession();
       return operations.get(key);
@@ -92,7 +104,11 @@ export function createResetGrantOperations(deps = defaultDependencies) {
         if (!wasRetry || code === 'reset' || code === 'already_used') operation.code = code;
         return { code, unresolved: !operation.code };
       } finally {
-        if (deps.revision() === session) busy.delete(key);
+        if (deps.revision() === session) {
+          busy.delete(key);
+          version++;
+          for (const listener of listeners) listener();
+        }
       }
     },
   };

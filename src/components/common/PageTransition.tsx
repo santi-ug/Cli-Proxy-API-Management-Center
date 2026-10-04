@@ -430,6 +430,7 @@ export function PageTransition({
               ]
                 .filter(Boolean)
                 .join(' ')}
+              data-route-pathname={layer.location.pathname}
               aria-hidden={layer.status !== 'current'}
               inert={layer.status !== 'current'}
               ref={

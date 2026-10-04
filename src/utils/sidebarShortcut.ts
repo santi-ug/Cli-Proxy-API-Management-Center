@@ -1,3 +1,4 @@
+/** Cmd/Ctrl+B, outside text fields: toggles the navigation drawer. */
 export function isSidebarToggleShortcut(event: {
   key: string;
   metaKey: boolean;
@@ -15,8 +16,4 @@ export function isSidebarToggleShortcut(event: {
     return false;
   }
   return true;
-}
-
-export function getSidebarShortcutLabel(isMac: boolean): string {
-  return isMac ? '⌘B' : 'Ctrl+B';
 }

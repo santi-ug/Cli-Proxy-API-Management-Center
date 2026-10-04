@@ -48,6 +48,8 @@ export type AuthFileFieldsPatch = {
   excluded_models?: string[];
   'excluded-models'?: string[];
   expired?: string;
+  /** Atomically switches intent and manual routing state; auto lets the router recompute. */
+  pool_mode?: 'auto' | 'on' | 'off';
 };
 type AuthFileBatchFailure = { name: string; error: string };
 type AuthFileBatchUploadResponse = {

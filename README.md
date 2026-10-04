@@ -44,6 +44,8 @@ The UI is bundled with [CLI Proxy API](https://github.com/router-for-me/CLIProxy
 
 The API address is detected from the page URL and can be changed manually.
 
+If the gateway accepts management calls without a key from where you connect (for example loopback behind Tailscale Serve), the UI connects on its own and skips the login screen. Otherwise the key login applies. Keyless access is safe only when the gateway binds to loopback and Tailscale Serve exposes it within the Tailnet. Do not use Tailscale Funnel for a keyless management endpoint.
+
 > [!NOTE]
 > The **management key** signs you into this UI. Client keys in `access.api-keys` authorize requests to the proxy — they are not interchangeable.
 
@@ -70,6 +72,7 @@ Upgrade the backend first and back up `config.yaml`. The backend returns the v8 
 
 | Area | What you can do |
 | --- | --- |
+| **Account pools** | The page you land on: every Claude and Codex account's 5-hour and weekly limits, banked resets, and Auto/On/Off pool switches. **Compact** keeps only the bars, for screenshots. |
 | **Dashboard** | See connection status, server version, build date, and model availability at a glance. |
 | **Configuration** | Edit common settings and client keys visually, or use the YAML editor with search, highlighting, and a save diff preview. |
 | **AI providers** | Configure Gemini, Codex, Claude, Vertex, and OpenAI-compatible providers; manage keys, headers, proxies, and model mappings. |
@@ -168,3 +171,5 @@ Use a trusted device or dedicated browser profile. Enable remote management only
 [CLI Proxy API](https://github.com/router-for-me/CLIProxyAPI) · [Report an issue](https://github.com/router-for-me/Cli-Proxy-API-Management-Center/issues) · [MIT License](LICENSE)
 
 </div>
+
+The pool switches persist intent. Auto needs the fleet pool router to apply policy and update status; this UI does not run the router. Manual refreshes wait at least 60 seconds per account; Claude polls every 10 minutes and Codex every 5 minutes.
